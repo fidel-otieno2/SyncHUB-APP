@@ -4,14 +4,14 @@ import FileCard from '../components/FileCard';
 import SyncStatus from '../components/SyncStatus';
 import FolderGrid from '../components/FolderGrid';
 import { formatDate } from '../utils/formatDate';
-import { useNotification } from '../context/NotificationContext';
 import Tooltip from '../components/Tooltip';
+import { t } from '../utils/translations';
 
 const Dashboard = () => {
   const { files, recentFiles, fetchFiles, downloadFile, deleteFile, syncAll, trackRecentFile } = useFiles();
   const [syncLogs, setSyncLogs] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
-  const { showNotification } = useNotification();
+  const lang = JSON.parse(localStorage.getItem('synchub-settings') || '{}').language || 'en';
 
   useEffect(() => {
     fetchFiles();
@@ -63,7 +63,7 @@ const Dashboard = () => {
       }));
       
       setSyncLogs(prev => [...syncEntries, ...prev].slice(0, 15)); // Keep last 15 entries
-      showNotification('Files synced successfully across all devices!', 'success');
+      console.log('Files synced successfully across all devices!');
     } catch (error) {
       setSyncLogs(prev => [{
         id: Date.now(),
@@ -72,7 +72,7 @@ const Dashboard = () => {
         status: 'Failed',
         timestamp: new Date()
       }, ...prev]);
-      showNotification('Sync failed. Please try again.', 'error');
+      console.error('Sync failed. Please try again.');
     } finally {
       setIsSyncing(false);
     }
@@ -104,8 +104,8 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-2">Dashboard</h1>
-            <p className="text-lg text-gray-300">Manage your files and monitor sync activity</p>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-2">{t('dashboard', lang)}</h1>
+            <p className="text-lg text-gray-300">{t('manageFiles', lang)}</p>
           </div>
           <Tooltip text="Sync all files across devices">
             <button
@@ -136,8 +136,8 @@ const Dashboard = () => {
         {/* Folder Organization */}
         <div className="mb-8">
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-6 border border-white/20">
-            <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-4">File Folders</h2>
-            <p className="text-gray-300 mb-6">Organize your files by type. Click on a folder to view its contents.</p>
+            <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-4">{t('fileFolders', lang)}</h2>
+            <p className="text-gray-300 mb-6">{t('organizeFiles', lang)}</p>
             <FolderGrid />
           </div>
         </div>

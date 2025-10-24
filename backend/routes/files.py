@@ -206,12 +206,21 @@ def get_file_details(file_id):
                 obj_stat = minio_client.stat_object(bucket_name, obj.object_name)
                 metadata = obj_stat.metadata or {}
                 
+                def get_metadata(key):
+                    return (metadata.get(f'x-amz-meta-{key}') or 
+                           metadata.get(key) or 
+                           metadata.get(key.lower()) or '')
+                
                 return jsonify({
                     'id': file_id,
-                    'filename': metadata.get('x-amz-meta-original_filename', obj.object_name),
+                    'filename': get_metadata('original_filename') or obj.object_name.split('/')[-1],
+                    'title': get_metadata('title') or obj.object_name.split('/')[-1],
+                    'description': get_metadata('description'),
                     'size': obj.size,
                     'content_type': obj_stat.content_type,
-                    'created_at': obj.last_modified.isoformat() if obj.last_modified else None
+                    'created_at': obj.last_modified.isoformat() if obj.last_modified else None,
+                    'folder_type': get_metadata('folder_type') or 'documents',
+                    'device_name': get_metadata('device_name') or 'Unknown Device'
                 }), 200
         
         return jsonify({'error': 'File not found'}), 404

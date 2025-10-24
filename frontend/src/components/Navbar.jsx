@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
+import { t } from '../utils/translations';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const lang = JSON.parse(localStorage.getItem('synchub-settings') || '{}').language || 'en';
 
   const handleLogout = () => {
     logout();
@@ -32,31 +34,31 @@ const Navbar = () => {
                   to="/dashboard"
                   className="text-gray-200 hover:text-white hover:bg-gray-700/50 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 transform hover:scale-105"
                 >
-                  Dashboard
+                  {t('dashboard', lang)}
                 </Link>
                 <Link
                   to="/upload"
                   className="text-gray-200 hover:text-white hover:bg-gray-700/50 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 transform hover:scale-105"
                 >
-                  Upload
+                  {t('upload', lang)}
                 </Link>
                 <Link
                   to="/devices"
                   className="text-gray-200 hover:text-white hover:bg-gray-700/50 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 transform hover:scale-105"
                 >
-                  Devices
+                  {t('devices', lang)}
                 </Link>
                 <Link
                   to="/settings"
                   className="text-gray-200 hover:text-white hover:bg-gray-700/50 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 transform hover:scale-105"
                 >
-                  Settings
+                  {t('settings', lang)}
                 </Link>
                 <button
                   onClick={handleLogout}
                   className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg transform hover:scale-105 ml-2"
                 >
-                  Logout
+                  {t('logout', lang)}
                 </button>
               </>
             ) : (

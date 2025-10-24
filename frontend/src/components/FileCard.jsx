@@ -3,10 +3,14 @@ import { Link } from 'react-router-dom';
 import { useFiles } from '../context/FileContext';
 import { formatDate } from '../utils/formatDate';
 import AudioPlayer from './AudioPlayer';
+import Alert from './Alert';
+import { t } from '../utils/translations';
 
 const FileCard = ({ file }) => {
   const { downloadFile, deleteFile, moveFile, trackRecentFile } = useFiles();
   const [showMoveModal, setShowMoveModal] = useState(false);
+  const [alert, setAlert] = useState(null);
+  const lang = JSON.parse(localStorage.getItem('synchub-settings') || '{}').language || 'en';
 
   const handleDownload = (e) => {
     e.preventDefault();
@@ -29,6 +33,9 @@ const FileCard = ({ file }) => {
     const success = await moveFile(file.id, targetFolder);
     if (success) {
       setShowMoveModal(false);
+      setAlert({ message: `"${file.title}" moved to ${targetFolder} successfully!`, type: 'success' });
+    } else {
+      setAlert({ message: `Failed to move "${file.title}". Please try again.`, type: 'error' });
     }
   };
 
@@ -55,15 +62,23 @@ const FileCard = ({ file }) => {
   };
 
   return (
-    <div 
-      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden cursor-pointer"
-      onClick={handleCardClick}
-    >
+    <>
+      {alert && (
+        <Alert
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert(null)}
+        />
+      )}
+      <div 
+        className="bg-white/10 backdrop-blur-lg rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden cursor-pointer border border-white/20"
+        onClick={handleCardClick}
+      >
       <div className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">{file.title}</h3>
-            <p className="text-sm text-gray-600 mb-2 line-clamp-2">{file.description || 'No description'}</p>
+            <h3 className="text-lg font-semibold text-white mb-1 truncate">{file.title}</h3>
+            <p className="text-sm text-gray-300 mb-2 line-clamp-2">{file.description || 'No description'}</p>
           </div>
           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(file.status || 'synced')}`}>
             {file.status || 'Synced'}
@@ -71,19 +86,19 @@ const FileCard = ({ file }) => {
         </div>
 
         <div className="space-y-2 mb-4">
-          <div className="flex justify-between text-sm text-gray-500">
+          <div className="flex justify-between text-sm text-gray-400">
             <span>Type:</span>
             <span>{file.type || 'Unknown'}</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-500">
+          <div className="flex justify-between text-sm text-gray-400">
             <span>Size:</span>
             <span>{file.size || 'Unknown'}</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-500">
+          <div className="flex justify-between text-sm text-gray-400">
             <span>Uploaded:</span>
             <span>{formatDate(file.uploadDate || new Date())}</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-500">
+          <div className="flex justify-between text-sm text-gray-400">
             <span>Last Synced:</span>
             <span>{formatDate(file.lastSynced || new Date())}</span>
           </div>
@@ -94,7 +109,7 @@ const FileCard = ({ file }) => {
             to={`/files/${file.id}`}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-md text-sm font-medium transition duration-300"
           >
-            View Details
+            {t('viewDetails', lang)}
           </Link>
           <button
             onClick={handleDownload}
@@ -163,7 +178,8 @@ const FileCard = ({ file }) => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

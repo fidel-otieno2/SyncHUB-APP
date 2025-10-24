@@ -1,157 +1,244 @@
 import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import Alert from '../components/Alert';
 
 const SettingsPage = () => {
-  const [minioConfig, setMinioConfig] = useState({
-    endpoint: 'http://localhost:9000',
-    accessKey: 'minioadmin',
-    secretKey: 'minioadmin'
+  const { user } = useAuth();
+  const [settings, setSettings] = useState({
+    storageLocation: '/home/user/synchub',
+    syncFrequency: 'auto',
+    notifications: true,
+    autoSync: true,
+    maxFileSize: '100',
+    theme: 'dark',
+    language: 'en'
   });
+  const [alert, setAlert] = useState(null);
 
-  const [ngrokConfig, setNgrokConfig] = useState({
-    tunnelUrl: 'https://deucedly-pretyphoid-jeanene.ngrok-free.dev',
-    status: 'Active'
-  });
+  const handleSettingChange = (key, value) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
 
-  const [dbConfig, setDbConfig] = useState({
-    host: 'aws-1-eu-north-1.pooler.supabase.com',
-    port: '5432',
-    database: 'postgres',
-    user: 'postgres.szfyytdzcgljaesbwkri'
-  });
+  const handleSaveSettings = () => {
+    localStorage.setItem('synchub-settings', JSON.stringify(settings));
+    setAlert({ message: 'Settings saved successfully!', type: 'success' });
+  };
 
-  const handleSave = () => {
-    // In real app, save to backend
-    alert('Settings saved successfully!');
+  const handleResetSettings = () => {
+    if (window.confirm('Are you sure you want to reset all settings to default?')) {
+      setSettings({
+        storageLocation: '/home/user/synchub',
+        syncFrequency: 'auto',
+        notifications: true,
+        autoSync: true,
+        maxFileSize: '100',
+        theme: 'dark',
+        language: 'en'
+      });
+      setAlert({ message: 'Settings reset to default!', type: 'success' });
+    }
+  };
+
+  const handleExportSettings = () => {
+    const dataStr = JSON.stringify(settings, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'synchub-settings.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    setAlert({ message: 'Settings exported successfully!', type: 'success' });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-6xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-4">⚙️ System Settings</h1>
-          <p className="text-xl text-gray-300 font-medium">Configure MinIO, Ngrok, and Database connections</p>
+      {alert && (
+        <Alert
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert(null)}
+        />
+      )}
+      
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-2">Settings</h1>
+          <p className="text-gray-300">Manage your SyncHUB preferences and configuration</p>
         </div>
 
-        <div className="space-y-8">
-          {/* MinIO Configuration */}
-          <div className="bg-white/80 backdrop-blur-lg shadow-2xl rounded-3xl p-8 border border-white/20">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center">
-              🗄 MinIO Configuration
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* General Settings */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
+            <h2 className="text-2xl font-semibold text-white mb-6 flex items-center">
+              ⚙️ General Settings
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Endpoint</label>
-                <input
-                  type="text"
-                  value={minioConfig.endpoint}
-                  onChange={(e) => setMinioConfig({...minioConfig, endpoint: e.target.value})}
-                  className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all duration-200 bg-blue-50/50"
+                <label className="block text-sm font-medium text-gray-300 mb-2">Storage Location</label>
+                <input 
+                  type="text" 
+                  value={settings.storageLocation}
+                  onChange={(e) => handleSettingChange('storageLocation', e.target.value)}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  placeholder="/path/to/storage"
                 />
               </div>
+              
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Access Key</label>
-                <input
-                  type="text"
-                  value={minioConfig.accessKey}
-                  onChange={(e) => setMinioConfig({...minioConfig, accessKey: e.target.value})}
-                  className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all duration-200 bg-blue-50/50"
+                <label className="block text-sm font-medium text-gray-300 mb-2">Sync Frequency</label>
+                <select 
+                  value={settings.syncFrequency}
+                  onChange={(e) => handleSettingChange('syncFrequency', e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-cyan-500"
+                >
+                  <option value="auto">Automatic (Real-time)</option>
+                  <option value="5min">Every 5 minutes</option>
+                  <option value="15min">Every 15 minutes</option>
+                  <option value="1hour">Every hour</option>
+                  <option value="manual">Manual only</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Maximum File Size (MB)</label>
+                <input 
+                  type="number" 
+                  value={settings.maxFileSize}
+                  onChange={(e) => handleSettingChange('maxFileSize', e.target.value)}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-cyan-500"
+                  min="1"
+                  max="1000"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Secret Key</label>
-                <input
-                  type="password"
-                  value={minioConfig.secretKey}
-                  onChange={(e) => setMinioConfig({...minioConfig, secretKey: e.target.value})}
-                  className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all duration-200 bg-blue-50/50"
-                />
+                <label className="block text-sm font-medium text-gray-300 mb-2">Language</label>
+                <select 
+                  value={settings.language}
+                  onChange={(e) => handleSettingChange('language', e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-cyan-500"
+                >
+                  <option value="en">English</option>
+                  <option value="es">Español</option>
+                  <option value="fr">Français</option>
+                  <option value="de">Deutsch</option>
+                </select>
               </div>
             </div>
           </div>
 
-          {/* Ngrok Configuration */}
-          <div className="bg-white/80 backdrop-blur-lg shadow-2xl rounded-3xl p-8 border border-white/20">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center">
-              🌐 Ngrok Configuration
+          {/* Preferences */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
+            <h2 className="text-2xl font-semibold text-white mb-6 flex items-center">
+              🎛️ Preferences
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tunnel URL</label>
-                <input
-                  type="text"
-                  value={ngrokConfig.tunnelUrl}
-                  onChange={(e) => setNgrokConfig({...ngrokConfig, tunnelUrl: e.target.value})}
-                  className="w-full px-4 py-3 border-2 border-indigo-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-500 transition-all duration-200 bg-indigo-50/50"
+            
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-gray-300 font-medium">Enable Notifications</label>
+                  <p className="text-sm text-gray-400">Get notified about sync status and file changes</p>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={settings.notifications}
+                  onChange={(e) => handleSettingChange('notifications', e.target.checked)}
+                  className="w-5 h-5 text-cyan-500 bg-white/10 border-white/20 rounded focus:ring-cyan-500"
                 />
               </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-gray-300 font-medium">Auto-Sync</label>
+                  <p className="text-sm text-gray-400">Automatically sync files when changes are detected</p>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={settings.autoSync}
+                  onChange={(e) => handleSettingChange('autoSync', e.target.checked)}
+                  className="w-5 h-5 text-cyan-500 bg-white/10 border-white/20 rounded focus:ring-cyan-500"
+                />
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <div className="flex items-center">
-                  <span className={`inline-flex px-4 py-2 text-sm font-bold rounded-full shadow-lg ${
-                    ngrokConfig.status === 'Active'
-                      ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white'
-                      : 'bg-gradient-to-r from-red-400 to-pink-500 text-white'
-                  }`}>
-                    {ngrokConfig.status}
-                  </span>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Theme</label>
+                <select 
+                  value={settings.theme}
+                  onChange={(e) => handleSettingChange('theme', e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-cyan-500"
+                >
+                  <option value="dark">Dark Mode</option>
+                  <option value="light">Light Mode</option>
+                  <option value="auto">System Default</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Account Information */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
+            <h2 className="text-2xl font-semibold text-white mb-6 flex items-center">
+              👤 Account Information
+            </h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                <p className="text-white">{user?.email || 'user@example.com'}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
+                <p className="text-white">{user?.name || 'User Name'}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Account Type</label>
+                <p className="text-white">Premium User</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Storage Used</label>
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1 bg-white/20 rounded-full h-2">
+                    <div className="bg-gradient-to-r from-cyan-500 to-purple-600 h-2 rounded-full" style={{width: '45%'}}></div>
+                  </div>
+                  <span className="text-white text-sm">4.5GB / 10GB</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Database Configuration */}
-          <div className="bg-white/80 backdrop-blur-lg shadow-2xl rounded-3xl p-8 border border-white/20">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center">
-              💾 Database Configuration
+          {/* Actions */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
+            <h2 className="text-2xl font-semibold text-white mb-6 flex items-center">
+              🔧 Actions
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Host</label>
-                <input
-                  type="text"
-                  value={dbConfig.host}
-                  onChange={(e) => setDbConfig({...dbConfig, host: e.target.value})}
-                  className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-200 bg-purple-50/50"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Port</label>
-                <input
-                  type="text"
-                  value={dbConfig.port}
-                  onChange={(e) => setDbConfig({...dbConfig, port: e.target.value})}
-                  className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-200 bg-purple-50/50"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Database</label>
-                <input
-                  type="text"
-                  value={dbConfig.database}
-                  onChange={(e) => setDbConfig({...dbConfig, database: e.target.value})}
-                  className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-200 bg-purple-50/50"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">User</label>
-                <input
-                  type="text"
-                  value={dbConfig.user}
-                  onChange={(e) => setDbConfig({...dbConfig, user: e.target.value})}
-                  className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-200 bg-purple-50/50"
-                />
-              </div>
+            
+            <div className="space-y-4">
+              <button 
+                onClick={handleSaveSettings}
+                className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg transform hover:scale-105"
+              >
+                💾 Save Settings
+              </button>
+              
+              <button 
+                onClick={handleExportSettings}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg transform hover:scale-105"
+              >
+                📤 Export Settings
+              </button>
+              
+              <button 
+                onClick={handleResetSettings}
+                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg transform hover:scale-105"
+              >
+                🔄 Reset to Default
+              </button>
             </div>
-          </div>
-
-          {/* Save Button */}
-          <div className="flex justify-center">
-            <button
-              onClick={handleSave}
-              className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 hover:from-blue-600 hover:via-indigo-600 hover:to-purple-700 text-white px-12 py-4 rounded-2xl font-bold text-xl transition-all duration-300 shadow-2xl transform hover:scale-105"
-            >
-              💾 Save Changes
-            </button>
           </div>
         </div>
       </div>

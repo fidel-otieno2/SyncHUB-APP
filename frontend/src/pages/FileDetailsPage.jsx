@@ -4,21 +4,34 @@ import { useFiles } from '../context/FileContext';
 import { formatDate } from '../utils/formatDate';
 import axiosInstance from '../api/axiosInstance';
 import MediaPlayer from '../components/MediaPlayer';
-import { useNotification } from '../context/NotificationContext';
+
 import Tooltip from '../components/Tooltip';
+import Alert from '../components/Alert';
 
 const FileDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { files, downloadFile, deleteFile } = useFiles();
   const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [versions, setVersions] = useState([]);
   const [syncLogs, setSyncLogs] = useState([]);
-  const { showNotification } = useNotification();
+  const [alert, setAlert] = useState(null);
+
 
   useEffect(() => {
     const fetchFileDetails = async () => {
+      if (!id) {
+        setError('No file ID provided');
+        setLoading(false);
+        return;
+      }
+      
       try {
+        setLoading(true);
+        setError(null);
+        
         const response = await axiosInstance.get(`/api/files/${id}`);
         const fileData = response.data;
         
@@ -27,9 +40,9 @@ const FileDetailsPage = () => {
           ...fileData,
           type: fileData.content_type || 'Unknown',
           size: formatFileSize(fileData.size),
-          uploadedBy: 'Current User', // You can get this from auth context
+          uploadedBy: 'Current User',
           uploadDate: fileData.created_at ? new Date(fileData.created_at) : new Date(),
-          lastSynced: new Date() // This would come from sync logs in real app
+          lastSynced: new Date()
         };
         
         setFile(formattedFile);
@@ -43,13 +56,14 @@ const FileDetailsPage = () => {
         ]);
       } catch (error) {
         console.error('Error fetching file details:', error);
+        setError(error.response?.data?.error || 'Failed to load file details');
         setFile(null);
+      } finally {
+        setLoading(false);
       }
     };
 
-    if (id) {
-      fetchFileDetails();
-    }
+    fetchFileDetails();
   }, [id]);
 
   const formatFileSize = (bytes) => {
@@ -75,9 +89,9 @@ const FileDetailsPage = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      showNotification(`${file.filename} downloaded successfully!`, 'success');
+      setAlert({ message: `"${file.filename}" downloaded successfully!`, type: 'success' });
     } catch (error) {
-      showNotification('Download failed. Please try again.', 'error');
+      setAlert({ message: 'Download failed. Please try again.', type: 'error' });
     }
   };
   
@@ -85,24 +99,24 @@ const FileDetailsPage = () => {
     try {
       // For now, download the same file (in real app, you'd have version-specific URLs)
       await handleDownload();
-      showNotification(`Version ${version.version} downloaded successfully!`, 'success');
+      setAlert({ message: `"${file.filename}" version ${version.version} downloaded successfully!`, type: 'success' });
     } catch (error) {
-      showNotification('Version download failed.', 'error');
+      setAlert({ message: 'Version download failed.', type: 'error' });
     }
   };
   
   const handleRestore = (version) => {
     // In a real app, this would restore the file to this version
-    showNotification(`File restored to version ${version.version}!`, 'success');
+    setAlert({ message: `"${file.filename}" restored to version ${version.version} successfully!`, type: 'success' });
   };
 
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this file?')) {
       try {
         await deleteFile(file.id);
-        showNotification('File deleted successfully!', 'success');
+        setAlert({ message: `"${file.filename}" deleted successfully!`, type: 'success' });
       } catch (error) {
-        showNotification('Delete failed. Please try again.', 'error');
+        setAlert({ message: 'Delete failed. Please try again.', type: 'error' });
       }
     }
   };
@@ -110,18 +124,35 @@ const FileDetailsPage = () => {
   const handleSyncNow = async () => {
     try {
       await axiosInstance.post('/api/sync/trigger');
-      showNotification('File sync initiated successfully!', 'success');
+      setAlert({ message: `"${file.filename}" sync initiated successfully!`, type: 'success' });
     } catch (error) {
-      showNotification('Sync failed. Please try again.', 'error');
+      setAlert({ message: 'Sync failed. Please try again.', type: 'error' });
     }
   };
 
-  if (!file) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">File Not Found</h2>
-          <p className="text-gray-600">The requested file could not be found.</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mx-auto mb-4"></div>
+          <h2 className="text-2xl font-bold text-white mb-2">Loading File Details...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !file) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-white mb-2">File Not Found</h2>
+          <p className="text-gray-300 mb-4">{error || 'The requested file could not be found.'}</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg transform hover:scale-105"
+          >
+            Go Back
+          </button>
         </div>
       </div>
     );
@@ -129,6 +160,13 @@ const FileDetailsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8">
+      {alert && (
+        <Alert
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert(null)}
+        />
+      )}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <div className="mb-6">

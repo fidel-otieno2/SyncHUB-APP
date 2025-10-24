@@ -9,43 +9,43 @@ const FolderGrid = () => {
       type: 'documents',
       name: 'Documents',
       icon: '📄',
-      color: 'bg-blue-100 border-blue-300 hover:bg-blue-200',
-      textColor: 'text-blue-800'
+      color: 'bg-blue-500/20 border-blue-400/30 hover:bg-blue-500/30',
+      textColor: 'text-blue-300'
     },
     {
       type: 'images',
       name: 'Images',
       icon: '🖼️',
-      color: 'bg-green-100 border-green-300 hover:bg-green-200',
-      textColor: 'text-green-800'
+      color: 'bg-green-500/20 border-green-400/30 hover:bg-green-500/30',
+      textColor: 'text-green-300'
     },
     {
       type: 'videos',
       name: 'Videos',
       icon: '🎥',
-      color: 'bg-red-100 border-red-300 hover:bg-red-200',
-      textColor: 'text-red-800'
+      color: 'bg-red-500/20 border-red-400/30 hover:bg-red-500/30',
+      textColor: 'text-red-300'
     },
     {
       type: 'music',
       name: 'Music',
       icon: '🎵',
-      color: 'bg-purple-100 border-purple-300 hover:bg-purple-200',
-      textColor: 'text-purple-800'
+      color: 'bg-purple-500/20 border-purple-400/30 hover:bg-purple-500/30',
+      textColor: 'text-purple-300'
     },
     {
       type: 'archives',
       name: 'Archives',
       icon: '📦',
-      color: 'bg-orange-100 border-orange-300 hover:bg-orange-200',
-      textColor: 'text-orange-800'
+      color: 'bg-orange-500/20 border-orange-400/30 hover:bg-orange-500/30',
+      textColor: 'text-orange-300'
     },
     {
       type: 'others',
       name: 'Others',
       icon: '📁',
-      color: 'bg-gray-100 border-gray-300 hover:bg-gray-200',
-      textColor: 'text-gray-800'
+      color: 'bg-gray-500/20 border-gray-400/30 hover:bg-gray-500/30',
+      textColor: 'text-gray-300'
     }
   ];
 
@@ -54,7 +54,7 @@ const FolderGrid = () => {
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       {folders.map((folder) => (
         <div
           key={folder.type}
