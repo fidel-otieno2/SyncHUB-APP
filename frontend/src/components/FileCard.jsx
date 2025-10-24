@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFiles } from '../context/FileContext';
 import { formatDate } from '../utils/formatDate';
+import AudioPlayer from './AudioPlayer';
 
 const FileCard = ({ file }) => {
-  const { downloadFile, deleteFile } = useFiles();
+  const { downloadFile, deleteFile, moveFile, trackRecentFile } = useFiles();
+  const [showMoveModal, setShowMoveModal] = useState(false);
 
   const handleDownload = (e) => {
     e.preventDefault();
@@ -18,6 +20,25 @@ const FileCard = ({ file }) => {
     }
   };
 
+  const handleMove = (e) => {
+    e.preventDefault();
+    setShowMoveModal(true);
+  };
+
+  const handleMoveConfirm = async (targetFolder) => {
+    const success = await moveFile(file.id, targetFolder);
+    if (success) {
+      setShowMoveModal(false);
+    }
+  };
+
+  const folders = [
+    { value: 'video', label: '🎥 Videos' },
+    { value: 'audio', label: '🎵 Audio' },
+    { value: 'pictures', label: '🖼️ Pictures' },
+    { value: 'documents', label: '📄 Documents' }
+  ];
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'synced': return 'bg-green-100 text-green-800';
@@ -27,8 +48,17 @@ const FileCard = ({ file }) => {
     }
   };
 
+  const handleCardClick = () => {
+    if (trackRecentFile) {
+      trackRecentFile(file.id);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+    <div 
+      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden cursor-pointer"
+      onClick={handleCardClick}
+    >
       <div className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
@@ -73,6 +103,14 @@ const FileCard = ({ file }) => {
           >
             📥
           </button>
+
+          <button
+            onClick={handleMove}
+            className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-md text-sm font-medium transition duration-300"
+            title="Move to folder"
+          >
+            📁
+          </button>
           <button
             onClick={handleDelete}
             className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md text-sm font-medium transition duration-300"
@@ -81,7 +119,50 @@ const FileCard = ({ file }) => {
             🗑️
           </button>
         </div>
+        
+        {/* Play Button for Audio */}
+        {file.folder_type === 'audio' && (
+          <div className="mt-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(`http://localhost:5000/api/files/stream/${file.id}`, '_blank');
+              }}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition duration-300"
+            >
+              🎵 Play Audio
+            </button>
+          </div>
+        )}
       </div>
+      
+      {/* Move Modal */}
+      {showMoveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Move "{file.title}" to:</h3>
+            <div className="space-y-2">
+              {folders.filter(f => f.value !== file.folder_type).map((folder) => (
+                <button
+                  key={folder.value}
+                  onClick={() => handleMoveConfirm(folder.value)}
+                  className="w-full text-left p-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  {folder.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowMoveModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
