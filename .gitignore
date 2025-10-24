@@ -273,3 +273,28 @@ build/
 
 # Project-specific ignores
 backend/data/
+backend/migrations/
+backend/*.log
+frontend/*.log
+*.log
+
+# Test files
+test_*.txt
+downloaded_*.txt
+
+# Scripts
+start_*.sh
+test_*.sh
+check_*.sh
+
+# Documentation
+DEPLOYMENT_SUCCESS.md
+CLEANUP_SUMMARY.md
+
+# Duplicate directories
+backend*/
+frontend*/
+
+# Environment files (all variations)
+.env*
+!.env.example
