@@ -29,6 +29,21 @@ def create_app():
     app.register_blueprint(sync_bp, url_prefix='/api/sync')
 
     
+    # Root endpoint
+    @app.route('/', methods=['GET'])
+    def home():
+        return jsonify({
+            'message': 'SyncHUB Backend API',
+            'status': 'Running',
+            'version': '1.0.0',
+            'endpoints': {
+                'auth': '/api/auth/login, /api/auth/register',
+                'files': '/api/files, /api/files/upload',
+                'devices': '/api/devices',
+                'test': '/api/test'
+            }
+        }), 200
+    
     # Test endpoint
     @app.route('/api/test', methods=['GET', 'OPTIONS'])
     def test_endpoint():
