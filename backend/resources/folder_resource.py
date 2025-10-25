@@ -25,10 +25,12 @@ class FolderFilesResource(Resource):
     
     def get(self, folder_type):
         try:
-            # Return empty list for now since database may not be connected
-            return [], 200
+            db.create_all()
+            files = File.query.filter_by(folder_type=folder_type).all()
+            return files_schema.dump(files), 200
         except Exception as e:
-            return {'error': str(e)}, 500
+            print(f"Database error: {e}")
+            return [], 200
     
     def options(self, folder_type):
         return '', 200

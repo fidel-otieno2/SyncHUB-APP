@@ -14,13 +14,8 @@ def create_app():
     app.config.from_object(Config)
     
     # Initialize extensions
-    try:
-        db.init_app(app)
-        migrate = Migrate(app, db)
-    except Exception as db_error:
-        print(f"Database initialization failed: {db_error}")
-        # Continue without database for basic functionality
-    
+    db.init_app(app)
+    migrate = Migrate(app, db)
     jwt = JWTManager(app)
     api = Api(app)
     swagger = Swagger(app)

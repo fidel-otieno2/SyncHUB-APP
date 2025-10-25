@@ -32,9 +32,11 @@ class FileListResource(Resource):
     
     def get(self):
         try:
-            # Return empty list if database not available
-            return [], 200
+            db.create_all()
+            files = File.query.all()
+            return files_schema.dump(files), 200
         except Exception as e:
+            print(f"Database error: {e}")
             return [], 200
     
     def post(self):

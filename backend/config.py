@@ -15,8 +15,7 @@ class Config:
         if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL:
             DATABASE_URL += '?sslmode=require'
     
-    # Fallback to None if no DATABASE_URL (will cause graceful error handling)
-    SQLALCHEMY_DATABASE_URI = DATABASE_URL if DATABASE_URL else None
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL or 'postgresql://postgres:password@localhost:5432/synchub'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
