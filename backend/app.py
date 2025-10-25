@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
+from flask_restful import Api
+from flasgger import Swagger
 from models import db
 from config import Config
 
@@ -15,16 +17,21 @@ def create_app():
     db.init_app(app)
     migrate = Migrate(app, db)
     jwt = JWTManager(app)
+    api = Api(app)
+    swagger = Swagger(app)
     CORS(app, origins='*', supports_credentials=True, methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+    
+    # Register Flask-RESTful resources
+    from resources.file_resource import FileListResource, FileResource
+    api.add_resource(FileListResource, '/api/files')
+    api.add_resource(FileResource, '/api/files/<string:file_id>')
     
     # Register blueprints
     from routes.auth import auth_bp
-    from routes.files import files_bp
     from routes.devices import devices_bp
     from routes.sync import sync_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(files_bp, url_prefix='/api/files')
     app.register_blueprint(devices_bp, url_prefix='/api/devices')
     app.register_blueprint(sync_bp, url_prefix='/api/sync')
 
