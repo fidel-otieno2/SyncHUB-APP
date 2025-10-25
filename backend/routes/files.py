@@ -1,9 +1,15 @@
 from flask import Blueprint, request, jsonify, Response
-from minio import Minio
 import uuid
 import mimetypes
 from io import BytesIO
 from datetime import datetime
+
+# Optional MinIO import
+try:
+    from minio import Minio
+    MINIO_AVAILABLE = True
+except ImportError:
+    MINIO_AVAILABLE = False
 
 try:
     import cloudinary
@@ -23,6 +29,8 @@ except Exception as e:
 files_bp = Blueprint('files', __name__)
 
 def get_minio_client():
+    if not MINIO_AVAILABLE:
+        raise Exception("MinIO not available")
     return Minio(
         'localhost:9000',
         access_key='minioadmin',
