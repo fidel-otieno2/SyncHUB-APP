@@ -45,6 +45,7 @@ def get_files():
     
     try:
         from models import db, File
+        db.create_all()  # Ensure tables exist
         files = File.query.all()
         
         return jsonify([{
@@ -95,20 +96,26 @@ def upload_file():
             )
             
             # Save to database
-            from models import db, File
-            db_file = File(
-                id=file_id,
-                filename=file.filename,
-                title=title,
-                description=description,
-                folder_type=folder_type,
-                size=result.get('bytes', 0),
-                device_name=device_name,
-                cloudinary_url=result['secure_url'],
-                cloudinary_public_id=result['public_id']
-            )
-            db.session.add(db_file)
-            db.session.commit()
+            try:
+                from models import db, File
+                db.create_all()  # Ensure tables exist
+                
+                db_file = File(
+                    id=file_id,
+                    filename=file.filename,
+                    title=title,
+                    description=description,
+                    folder_type=folder_type,
+                    size=result.get('bytes', 0),
+                    device_name=device_name,
+                    cloudinary_url=result['secure_url'],
+                    cloudinary_public_id=result['public_id']
+                )
+                db.session.add(db_file)
+                db.session.commit()
+            except Exception as db_error:
+                print(f"Database error: {db_error}")
+                # Continue without database save
             
             return jsonify({
                 'message': 'File uploaded successfully to Cloudinary',
@@ -148,6 +155,7 @@ def get_files_by_folder(folder_type):
     
     try:
         from models import db, File
+        db.create_all()  # Ensure tables exist
         files = File.query.filter_by(folder_type=folder_type).all()
         
         return jsonify([{
