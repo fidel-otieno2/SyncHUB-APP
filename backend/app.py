@@ -33,9 +33,11 @@ def create_app():
     # Register Flask-RESTful resources
     from resources.file_resource import FileListResource, FileResource
     from resources.folder_resource import FolderFilesResource
+    from resources.upload_resource import FileUploadResource
     api.add_resource(FileListResource, '/api/files')
     api.add_resource(FileResource, '/api/files/<string:file_id>')
     api.add_resource(FolderFilesResource, '/api/files/by-folder/<string:folder_type>')
+    api.add_resource(FileUploadResource, '/api/files/upload')
     
     # Register blueprints
     from routes.auth import auth_bp
