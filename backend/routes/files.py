@@ -70,6 +70,8 @@ def upload_file():
         return '', 200
     
     try:
+        print(f"Upload request received. CLOUDINARY_AVAILABLE: {CLOUDINARY_AVAILABLE}")
+        
         if 'file' not in request.files:
             return jsonify({'error': 'No file provided'}), 400
         
@@ -82,10 +84,13 @@ def upload_file():
         device_name = request.form.get('device_name', 'Unknown Device')
         description = request.form.get('description', '')
         
+        print(f"Upload params: title={title}, folder_type={folder_type}, filename={file.filename}")
+        
         file_id = str(uuid.uuid4())
         filename = f"{file_id}_{file.filename}"
         
         if CLOUDINARY_AVAILABLE:
+            print("Uploading to Cloudinary...")
             # Upload to Cloudinary
             file.stream.seek(0)
             result = cloudinary.uploader.upload(
@@ -94,12 +99,15 @@ def upload_file():
                 resource_type="auto",
                 folder=f"synchub/{folder_type}"
             )
+            print(f"Cloudinary upload result: {result.get('secure_url')}")
             
             # Save to database
             try:
                 from models import db, File
+                print("Creating database tables...")
                 db.create_all()  # Ensure tables exist
                 
+                print("Saving file to database...")
                 db_file = File(
                     id=file_id,
                     filename=file.filename,
@@ -113,9 +121,11 @@ def upload_file():
                 )
                 db.session.add(db_file)
                 db.session.commit()
+                print("File saved to database successfully")
             except Exception as db_error:
                 print(f"Database error: {db_error}")
-                # Continue without database save
+                db.session.rollback()
+                return jsonify({'error': f'Database save failed: {str(db_error)}'}), 500
             
             return jsonify({
                 'message': 'File uploaded successfully to Cloudinary',
@@ -131,7 +141,7 @@ def upload_file():
                 'created_at': datetime.utcnow().isoformat()
             }), 200
         else:
-            # Fallback - just return success without storing
+            print("Cloudinary not available, using fallback")
             return jsonify({
                 'message': 'File upload simulated (Cloudinary not available)',
                 'file_id': file_id,
@@ -146,6 +156,8 @@ def upload_file():
         
     except Exception as e:
         print(f"Upload error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': f'Upload failed: {str(e)}'}), 500
 
 @files_bp.route('/by-folder/<folder_type>', methods=['GET', 'OPTIONS'])
