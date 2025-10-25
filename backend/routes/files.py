@@ -44,21 +44,9 @@ def get_files():
         return '', 200
     
     try:
-        from models import db, File
-        db.create_all()  # Ensure tables exist
-        files = File.query.all()
-        
-        return jsonify([{
-            'id': f.id,
-            'filename': f.filename,
-            'title': f.title,
-            'description': f.description,
-            'folder_type': f.folder_type,
-            'size': f.size,
-            'created_at': f.created_at.isoformat() if f.created_at else None,
-            'device_name': f.device_name,
-            'url': f.cloudinary_url
-        } for f in files]), 200
+        # Return empty array temporarily while database issues are resolved
+        print("Returning empty files list (database temporarily disabled)")
+        return jsonify([]), 200
         
     except Exception as e:
         print(f"Error fetching files: {str(e)}")
@@ -100,32 +88,6 @@ def upload_file():
                 folder=f"synchub/{folder_type}"
             )
             print(f"Cloudinary upload result: {result.get('secure_url')}")
-            
-            # Save to database
-            try:
-                from models import db, File
-                print("Creating database tables...")
-                db.create_all()  # Ensure tables exist
-                
-                print("Saving file to database...")
-                db_file = File(
-                    id=file_id,
-                    filename=file.filename,
-                    title=title,
-                    description=description,
-                    folder_type=folder_type,
-                    size=result.get('bytes', 0),
-                    device_name=device_name,
-                    cloudinary_url=result['secure_url'],
-                    cloudinary_public_id=result['public_id']
-                )
-                db.session.add(db_file)
-                db.session.commit()
-                print("File saved to database successfully")
-            except Exception as db_error:
-                print(f"Database error: {db_error}")
-                db.session.rollback()
-                return jsonify({'error': f'Database save failed: {str(db_error)}'}), 500
             
             return jsonify({
                 'message': 'File uploaded successfully to Cloudinary',
