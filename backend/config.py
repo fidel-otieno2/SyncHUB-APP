@@ -8,16 +8,15 @@ class Config:
     
     # Handle PostgreSQL URL conversion and connection issues
     if DATABASE_URL and 'postgresql' in DATABASE_URL:
-        # Use asyncpg driver for better compatibility
-        if 'postgresql://' in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+asyncpg://')
-        elif 'postgresql+psycopg2' in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql+psycopg2', 'postgresql+asyncpg')
+        # Use psycopg2 driver
+        if 'postgresql://' in DATABASE_URL and 'postgresql+psycopg2' not in DATABASE_URL:
+            DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg2://')
         # Add SSL requirement for Supabase
         if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL:
             DATABASE_URL += '?sslmode=require'
     
-    SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    # Fallback to None if no DATABASE_URL (will cause graceful error handling)
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL if DATABASE_URL else None
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
