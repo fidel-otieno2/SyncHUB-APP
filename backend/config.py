@@ -4,14 +4,28 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///synchub.db')
-    # Convert psycopg2 URLs to psycopg3
-    if SQLALCHEMY_DATABASE_URI and 'postgresql+psycopg2' in SQLALCHEMY_DATABASE_URI:
-        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgresql+psycopg2', 'postgresql+psycopg')
+    DATABASE_URL = os.getenv('DATABASE_URL')
+    
+    # Handle PostgreSQL URL conversion and connection issues
+    if DATABASE_URL and 'postgresql' in DATABASE_URL:
+        # Convert psycopg2 URLs to psycopg3
+        if 'postgresql+psycopg2' in DATABASE_URL:
+            DATABASE_URL = DATABASE_URL.replace('postgresql+psycopg2', 'postgresql+psycopg')
+        # Add SSL requirement for Supabase
+        if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL:
+            DATABASE_URL += '?sslmode=require'
+    
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
-        'pool_recycle': 300
+        'pool_recycle': 300,
+        'pool_timeout': 30,
+        'max_overflow': 10,
+        'connect_args': {
+            'connect_timeout': 30,
+            'sslmode': 'require'
+        }
     }
     JWT_SECRET_KEY = os.getenv('JWT_SECRET', 'your-secret-key')
     
