@@ -78,43 +78,34 @@ def upload_file():
         filename = f"{file_id}_{file.filename}"
         
         if CLOUDINARY_AVAILABLE:
-            print("Uploading to Cloudinary...")
-            # Upload to Cloudinary
-            file.stream.seek(0)
-            result = cloudinary.uploader.upload(
-                file.stream,
-                public_id=f"synchub/{folder_type}/{filename}",
-                resource_type="auto",
-                folder=f"synchub/{folder_type}"
-            )
-            print(f"Cloudinary upload result: {result.get('secure_url')}")
-            
-            return jsonify({
-                'message': 'File uploaded successfully to Cloudinary',
-                'file_id': file_id,
-                'filename': file.filename,
-                'title': title,
-                'description': description,
-                'folder_type': folder_type,
-                'size': result.get('bytes', 0),
-                'device_name': device_name,
-                'url': result['secure_url'],
-                'public_id': result['public_id'],
-                'created_at': datetime.utcnow().isoformat()
-            }), 200
+            try:
+                print("Uploading to Cloudinary...")
+                file.stream.seek(0)
+                result = cloudinary.uploader.upload(
+                    file.stream,
+                    public_id=f"synchub/{folder_type}/{filename}",
+                    resource_type="auto"
+                )
+                print(f"Cloudinary upload successful: {result.get('secure_url')}")
+                
+                return jsonify({
+                    'message': 'File uploaded successfully to Cloudinary',
+                    'file_id': file_id,
+                    'filename': file.filename,
+                    'title': title,
+                    'description': description,
+                    'folder_type': folder_type,
+                    'size': result.get('bytes', 0),
+                    'device_name': device_name,
+                    'url': result['secure_url'],
+                    'public_id': result['public_id'],
+                    'created_at': datetime.utcnow().isoformat()
+                }), 200
+            except Exception as cloud_error:
+                print(f"Cloudinary upload failed: {cloud_error}")
+                return jsonify({'error': f'Upload failed: {str(cloud_error)}'}), 500
         else:
-            print("Cloudinary not available, using fallback")
-            return jsonify({
-                'message': 'File upload simulated (Cloudinary not available)',
-                'file_id': file_id,
-                'filename': file.filename,
-                'title': title,
-                'description': description,
-                'folder_type': folder_type,
-                'size': 0,
-                'device_name': device_name,
-                'created_at': datetime.utcnow().isoformat()
-            }), 200
+            return jsonify({'error': 'Cloudinary not configured'}), 500
         
     except Exception as e:
         print(f"Upload error: {str(e)}")
