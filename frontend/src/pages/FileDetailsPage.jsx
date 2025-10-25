@@ -6,7 +6,7 @@ import axiosInstance from '../api/axiosInstance';
 import MediaPlayer from '../components/MediaPlayer';
 
 import Tooltip from '../components/Tooltip';
-import Alert from '../components/Alert';
+import Toast from '../components/Toast';
 
 const FileDetailsPage = () => {
   const { id } = useParams();
@@ -161,7 +161,7 @@ const FileDetailsPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8">
       {alert && (
-        <Alert
+        <Toast
           message={alert.message}
           type={alert.type}
           onClose={() => setAlert(null)}
