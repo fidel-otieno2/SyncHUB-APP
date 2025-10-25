@@ -44,51 +44,23 @@ def get_files():
         return '', 200
     
     try:
-        # Try to connect to MinIO, but return empty array if not available
-        minio_client = get_minio_client()
-        bucket_name = 'synchub-files'
-        files = []
+        from models import db, File
+        files = File.query.all()
         
-        if minio_client.bucket_exists(bucket_name):
-            objects = minio_client.list_objects(bucket_name, recursive=True)
-            for obj in objects:
-                try:
-                    obj_stat = minio_client.stat_object(bucket_name, obj.object_name)
-                    metadata = obj_stat.metadata or {}
-                    
-                    def get_metadata(key):
-                        return (metadata.get(f'x-amz-meta-{key}') or 
-                               metadata.get(key) or 
-                               metadata.get(key.lower()) or '')
-                    
-                    path_parts = obj.object_name.split('/')
-                    if len(path_parts) > 1:
-                        folder_type = path_parts[0]
-                        filename_part = path_parts[1]
-                        file_id = filename_part.split('_')[0] if '_' in filename_part else filename_part
-                    else:
-                        folder_type = 'documents'
-                        file_id = obj.object_name.split('_')[0] if '_' in obj.object_name else obj.object_name
-                    
-                    files.append({
-                        'id': file_id,
-                        'filename': get_metadata('original_filename') or obj.object_name.split('/')[-1],
-                        'title': get_metadata('title') or obj.object_name.split('/')[-1],
-                        'description': get_metadata('description'),
-                        'folder_type': folder_type,
-                        'size': obj.size,
-                        'created_at': obj.last_modified.isoformat() if obj.last_modified else None,
-                        'device_name': get_metadata('device_name') or 'Unknown Device',
-                        'object_name': obj.object_name
-                    })
-                except Exception as e:
-                    print(f"Error processing file {obj.object_name}: {e}")
-                    continue
-        
-        return jsonify(files), 200
+        return jsonify([{
+            'id': f.id,
+            'filename': f.filename,
+            'title': f.title,
+            'description': f.description,
+            'folder_type': f.folder_type,
+            'size': f.size,
+            'created_at': f.created_at.isoformat() if f.created_at else None,
+            'device_name': f.device_name,
+            'url': f.cloudinary_url
+        } for f in files]), 200
         
     except Exception as e:
-        print(f"Error fetching files (MinIO not available): {str(e)}")
+        print(f"Error fetching files: {str(e)}")
         return jsonify([]), 200
 
 @files_bp.route('/upload', methods=['POST', 'OPTIONS'])
@@ -121,6 +93,22 @@ def upload_file():
                 resource_type="auto",
                 folder=f"synchub/{folder_type}"
             )
+            
+            # Save to database
+            from models import db, File
+            db_file = File(
+                id=file_id,
+                filename=file.filename,
+                title=title,
+                description=description,
+                folder_type=folder_type,
+                size=result.get('bytes', 0),
+                device_name=device_name,
+                cloudinary_url=result['secure_url'],
+                cloudinary_public_id=result['public_id']
+            )
+            db.session.add(db_file)
+            db.session.commit()
             
             return jsonify({
                 'message': 'File uploaded successfully to Cloudinary',
@@ -159,59 +147,23 @@ def get_files_by_folder(folder_type):
         return '', 200
     
     try:
-        minio_client = get_minio_client()
-        bucket_name = 'synchub-files'
+        from models import db, File
+        files = File.query.filter_by(folder_type=folder_type).all()
         
-        if not minio_client.bucket_exists(bucket_name):
-            return jsonify([]), 200
-        
-        # Map plural folder names to singular for storage compatibility
-        folder_mapping = {
-            'videos': 'video',
-            'images': 'image', 
-            'documents': 'document',
-            'music': 'audio',
-            'archives': 'archive',
-            'others': 'other'
-        }
-        
-        # Try both the original folder name and mapped name
-        search_folders = [folder_type]
-        if folder_type in folder_mapping:
-            search_folders.append(folder_mapping[folder_type])
-        
-        files = []
-        for search_folder in search_folders:
-            objects = list(minio_client.list_objects(bucket_name, prefix=f"{search_folder}/"))
-            if objects:
-                break
-        
-        for obj in objects[:50]:  # Limit to 50 files to prevent timeout
-            try:
-                path_parts = obj.object_name.split('/')
-                if len(path_parts) > 1:
-                    filename_part = path_parts[1]
-                    file_id = filename_part.split('_')[0] if '_' in filename_part else filename_part
-                else:
-                    file_id = obj.object_name.split('_')[0] if '_' in obj.object_name else obj.object_name
-                
-                files.append({
-                    'id': file_id,
-                    'filename': obj.object_name.split('/')[-1],
-                    'title': obj.object_name.split('/')[-1],
-                    'description': '',
-                    'folder_type': folder_type,
-                    'size': obj.size,
-                    'created_at': obj.last_modified.isoformat() if obj.last_modified else None,
-                    'device_name': 'Unknown Device',
-                    'object_name': obj.object_name
-                })
-            except Exception as e:
-                continue
-        
-        return jsonify(files), 200
+        return jsonify([{
+            'id': f.id,
+            'filename': f.filename,
+            'title': f.title,
+            'description': f.description,
+            'folder_type': f.folder_type,
+            'size': f.size,
+            'created_at': f.created_at.isoformat() if f.created_at else None,
+            'device_name': f.device_name,
+            'url': f.cloudinary_url
+        } for f in files]), 200
         
     except Exception as e:
+        print(f"Error fetching files by folder: {str(e)}")
         return jsonify([]), 200
 
 @files_bp.route('/<file_id>', methods=['GET', 'OPTIONS'])

@@ -1,6 +1,7 @@
 import enum
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -23,3 +24,17 @@ class User(db.Model):
     
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+class File(db.Model):
+    __tablename__ = 'files'
+    id = db.Column(db.String(36), primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    folder_type = db.Column(db.String(50), nullable=False)
+    size = db.Column(db.Integer, default=0)
+    device_name = db.Column(db.String(100))
+    cloudinary_url = db.Column(db.String(500))
+    cloudinary_public_id = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
