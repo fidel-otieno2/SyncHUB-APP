@@ -2,15 +2,12 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFiles } from '../context/FileContext';
 import { formatDate } from '../utils/formatDate';
-import AudioPlayer from './AudioPlayer';
 import Toast from './Toast';
-
 
 const FileCard = ({ file }) => {
   const { downloadFile, deleteFile, moveFile, trackRecentFile } = useFiles();
   const [showMoveModal, setShowMoveModal] = useState(false);
-  const [alert, setAlert] = useState(null);
-
+  const [toast, setToast] = useState(null);
 
   const handleDownload = (e) => {
     e.preventDefault();
@@ -33,9 +30,9 @@ const FileCard = ({ file }) => {
     const success = await moveFile(file.id, targetFolder);
     if (success) {
       setShowMoveModal(false);
-      setAlert({ message: `"${file.title}" moved to ${targetFolder} successfully!`, type: 'success' });
+      setToast({ message: `"${file.title}" moved to ${targetFolder} successfully!`, type: 'success' });
     } else {
-      setAlert({ message: `Failed to move "${file.title}". Please try again.`, type: 'error' });
+      setToast({ message: `Failed to move "${file.title}". Please try again.`, type: 'error' });
     }
   };
 
@@ -63,121 +60,105 @@ const FileCard = ({ file }) => {
 
   return (
     <>
-      {alert && (
+      {toast && (
         <Toast
-          message={alert.message}
-          type={alert.type}
-          onClose={() => setAlert(null)}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
       <div 
         className="bg-white/10 backdrop-blur-lg rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden cursor-pointer border border-white/20"
         onClick={handleCardClick}
       >
-      <div className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-white mb-1 truncate">{file.title}</h3>
-            <p className="text-sm text-gray-300 mb-2 line-clamp-2">{file.description || 'No description'}</p>
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-white mb-1 truncate">{file.title}</h3>
+              <p className="text-sm text-gray-300 mb-2 line-clamp-2">{file.description || 'No description'}</p>
+            </div>
+            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(file.status || 'synced')}`}>
+              {file.status || 'Synced'}
+            </span>
           </div>
-          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(file.status || 'synced')}`}>
-            {file.status || 'Synced'}
-          </span>
-        </div>
 
-        <div className="space-y-2 mb-4">
-          <div className="flex justify-between text-sm text-gray-400">
-            <span>Type:</span>
-            <span>{file.type || 'Unknown'}</span>
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between text-sm text-gray-400">
+              <span>Type:</span>
+              <span>{file.type || 'Unknown'}</span>
+            </div>
+            <div className="flex justify-between text-sm text-gray-400">
+              <span>Size:</span>
+              <span>{file.size || 'Unknown'}</span>
+            </div>
+            <div className="flex justify-between text-sm text-gray-400">
+              <span>Uploaded:</span>
+              <span>{formatDate(file.uploadDate || new Date())}</span>
+            </div>
+            <div className="flex justify-between text-sm text-gray-400">
+              <span>Last Synced:</span>
+              <span>{formatDate(file.lastSynced || new Date())}</span>
+            </div>
           </div>
-          <div className="flex justify-between text-sm text-gray-400">
-            <span>Size:</span>
-            <span>{file.size || 'Unknown'}</span>
-          </div>
-          <div className="flex justify-between text-sm text-gray-400">
-            <span>Uploaded:</span>
-            <span>{formatDate(file.uploadDate || new Date())}</span>
-          </div>
-          <div className="flex justify-between text-sm text-gray-400">
-            <span>Last Synced:</span>
-            <span>{formatDate(file.lastSynced || new Date())}</span>
-          </div>
-        </div>
 
-        <div className="flex gap-2">
-          <Link
-            to={`/files/${file.id}`}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-md text-sm font-medium transition duration-300"
-          >
-            View Details
-          </Link>
-          <button
-            onClick={handleDownload}
-            className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md text-sm font-medium transition duration-300"
-            title="Download"
-          >
-            📥
-          </button>
-
-          <button
-            onClick={handleMove}
-            className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-md text-sm font-medium transition duration-300"
-            title="Move to folder"
-          >
-            📁
-          </button>
-          <button
-            onClick={handleDelete}
-            className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md text-sm font-medium transition duration-300"
-            title="Delete"
-          >
-            🗑️
-          </button>
-        </div>
-        
-        {/* Play Button for Audio */}
-        {file.folder_type === 'audio' && (
-          <div className="mt-3">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(`http://localhost:5000/api/files/stream/${file.id}`, '_blank');
-              }}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition duration-300"
+          <div className="flex gap-2">
+            <Link
+              to={`/file/${file.id}`}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-md text-sm font-medium transition duration-300"
             >
-              🎵 Play Audio
+              View Details
+            </Link>
+            <button
+              onClick={handleDownload}
+              className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md text-sm font-medium transition duration-300"
+              title="Download"
+            >
+              📥
+            </button>
+            <button
+              onClick={handleMove}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-md text-sm font-medium transition duration-300"
+              title="Move to folder"
+            >
+              📁
+            </button>
+            <button
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md text-sm font-medium transition duration-300"
+              title="Delete"
+            >
+              🗑️
             </button>
           </div>
-        )}
-      </div>
-      
-      {/* Move Modal */}
-      {showMoveModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Move "{file.title}" to:</h3>
-            <div className="space-y-2">
-              {folders.filter(f => f.value !== file.folder_type).map((folder) => (
+        </div>
+        
+        {/* Move Modal */}
+        {showMoveModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <h3 className="text-lg font-semibold mb-4">Move "{file.title}" to:</h3>
+              <div className="space-y-2">
+                {folders.filter(f => f.value !== file.folder_type).map((folder) => (
+                  <button
+                    key={folder.value}
+                    onClick={() => handleMoveConfirm(folder.value)}
+                    className="w-full text-left p-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    {folder.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-end mt-6">
                 <button
-                  key={folder.value}
-                  onClick={() => handleMoveConfirm(folder.value)}
-                  className="w-full text-left p-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  onClick={() => setShowMoveModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                 >
-                  {folder.label}
+                  Cancel
                 </button>
-              ))}
-            </div>
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => setShowMoveModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                Cancel
-              </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </>
   );
