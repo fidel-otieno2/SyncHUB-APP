@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 import os
 from simple_files import add_uploaded_file
+from services.minio_service import minio_service
 
 simple_upload_bp = Blueprint('simple_upload', __name__)
 
@@ -26,6 +27,23 @@ def simple_upload():
         
         file_id = str(uuid.uuid4())
         
+        # Upload to MinIO
+        if minio_service.available:
+            try:
+                result = minio_service.upload_file(
+                    file.stream, 
+                    file.filename, 
+                    folder_type,
+                    {'title': title, 'description': description, 'device': device_name}
+                )
+                file_url = result['url']
+                storage_type = 'minio'
+                file_size = result['size']
+            except Exception as e:
+                return jsonify({'error': f'MinIO upload failed: {str(e)}'}), 500
+        else:
+            return jsonify({'error': 'MinIO storage not available'}), 500
+        
         # Store file data and return response
         file_data = {
             'id': file_id,
@@ -33,9 +51,10 @@ def simple_upload():
             'title': title,
             'description': description,
             'folder_type': folder_type,
-            'size': 1024,
+            'size': file_size,
             'device_name': device_name,
-            'url': f'https://res.cloudinary.com/demo/image/upload/sample.jpg',
+            'url': file_url,
+            'storage_type': storage_type,
             'public_id': f'synchub/{folder_type}/{file_id}',
             'created_at': datetime.utcnow().isoformat()
         }
