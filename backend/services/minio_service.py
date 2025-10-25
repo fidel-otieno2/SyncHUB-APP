@@ -62,6 +62,59 @@ class MinIOService:
             return True
         except:
             return False
+    
+    def list_files(self, folder_type=None):
+        if not self.available:
+            return []
+        
+        try:
+            prefix = f"{folder_type}/" if folder_type else ""
+            objects = self.client.list_objects(self.bucket, prefix=prefix, recursive=True)
+            
+            files = []
+            for obj in objects:
+                try:
+                    # Get object metadata
+                    stat = self.client.stat_object(self.bucket, obj.object_name)
+                    metadata = stat.metadata or {}
+                    
+                    # Parse object name to get file info
+                    path_parts = obj.object_name.split('/')
+                    if len(path_parts) >= 2:
+                        folder = path_parts[0]
+                        filename_with_id = path_parts[1]
+                        # Extract original filename (remove UUID prefix)
+                        if '_' in filename_with_id:
+                            file_id = filename_with_id.split('_')[0]
+                            original_filename = '_'.join(filename_with_id.split('_')[1:])
+                        else:
+                            file_id = filename_with_id
+                            original_filename = filename_with_id
+                    else:
+                        folder = 'documents'
+                        file_id = obj.object_name
+                        original_filename = obj.object_name
+                    
+                    files.append({
+                        'id': file_id,
+                        'filename': original_filename,
+                        'title': metadata.get('title', original_filename),
+                        'description': metadata.get('description', ''),
+                        'folder_type': folder,
+                        'size': obj.size,
+                        'device_name': metadata.get('device', 'Unknown Device'),
+                        'url': f"http://{Config.MINIO_ENDPOINT}/{self.bucket}/{obj.object_name}",
+                        'object_name': obj.object_name,
+                        'created_at': obj.last_modified.isoformat() if obj.last_modified else None
+                    })
+                except Exception as e:
+                    print(f"Error processing file {obj.object_name}: {e}")
+                    continue
+            
+            return files
+        except Exception as e:
+            print(f"Error listing files: {e}")
+            return []
 
 # Global instance
 minio_service = MinIOService()
