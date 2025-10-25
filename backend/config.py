@@ -12,9 +12,10 @@ class Config:
     }
     JWT_SECRET_KEY = os.getenv('JWT_SECRET', 'your-secret-key')
     
-    # MinIO Configuration
-    MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT', 'localhost:9000')
-    MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY', 'minioadmin')
-    MINIO_SECRET_KEY = os.getenv('MINIO_SECRET_KEY', 'minioadmin')
-    MINIO_SECURE = os.getenv('MINIO_SECURE', 'False').lower() == 'true'
-    MINIO_BUCKET = os.getenv('MINIO_BUCKET', 'synchub-files')
+    # Cloudinary Configuration
+    CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
+    CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY')
+    CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
+    
+    # Frontend URL
+    FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
