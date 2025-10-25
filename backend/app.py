@@ -25,27 +25,16 @@ def create_app():
          methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
          allow_headers=['Content-Type', 'Authorization'])
     
-    # Register Flask-RESTful resources
-    from resources.file_resource import FileListResource, FileResource
-    from resources.folder_resource import FolderFilesResource
-    from resources.upload_resource import FileUploadResource
-    api.add_resource(FileListResource, '/api/files')
-    api.add_resource(FileResource, '/api/files/<string:file_id>')
-    api.add_resource(FolderFilesResource, '/api/files/by-folder/<string:folder_type>')
-    api.add_resource(FileUploadResource, '/api/files/upload')
-    
-    # Register blueprints
+    # Register simple blueprints only
     from routes.auth import auth_bp
     from routes.devices import devices_bp
     from routes.sync import sync_bp
-    from simple_upload import simple_upload_bp
-    from simple_files import simple_files_bp
+    from quick_upload import quick_upload_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(devices_bp, url_prefix='/api/devices')
     app.register_blueprint(sync_bp, url_prefix='/api/sync')
-    app.register_blueprint(simple_files_bp, url_prefix='/api/files')
-    app.register_blueprint(simple_upload_bp, url_prefix='/api/files')
+    app.register_blueprint(quick_upload_bp, url_prefix='/api/files')
 
     
     # Root endpoint
