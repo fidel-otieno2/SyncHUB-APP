@@ -292,7 +292,7 @@ DEPLOYMENT_SUCCESS.md
 CLEANUP_SUMMARY.md
 
 # Duplicate directories
-frontend*/
+# frontend*/
 
 # Environment files (all variations)
 .env*
