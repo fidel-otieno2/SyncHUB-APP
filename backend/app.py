@@ -24,12 +24,18 @@ def create_app():
     jwt = JWTManager(app)
     api = Api(app)
     swagger = Swagger(app)
-    CORS(app, origins='*', supports_credentials=True, methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+    CORS(app, 
+         origins=['*', 'https://sync-hub-app.vercel.app', 'http://localhost:5173'], 
+         supports_credentials=True, 
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+         allow_headers=['Content-Type', 'Authorization'])
     
     # Register Flask-RESTful resources
     from resources.file_resource import FileListResource, FileResource
+    from resources.folder_resource import FolderFilesResource
     api.add_resource(FileListResource, '/api/files')
     api.add_resource(FileResource, '/api/files/<string:file_id>')
+    api.add_resource(FolderFilesResource, '/api/files/by-folder/<string:folder_type>')
     
     # Register blueprints
     from routes.auth import auth_bp
