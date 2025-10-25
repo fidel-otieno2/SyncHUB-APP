@@ -3,14 +3,14 @@ import { Link } from 'react-router-dom';
 import { useFiles } from '../context/FileContext';
 import { formatDate } from '../utils/formatDate';
 import AudioPlayer from './AudioPlayer';
-import Alert from './Alert';
-import { t } from '../utils/translations';
+import Toast from './Toast';
+
 
 const FileCard = ({ file }) => {
   const { downloadFile, deleteFile, moveFile, trackRecentFile } = useFiles();
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [alert, setAlert] = useState(null);
-  const lang = JSON.parse(localStorage.getItem('synchub-settings') || '{}').language || 'en';
+
 
   const handleDownload = (e) => {
     e.preventDefault();
@@ -64,7 +64,7 @@ const FileCard = ({ file }) => {
   return (
     <>
       {alert && (
-        <Alert
+        <Toast
           message={alert.message}
           type={alert.type}
           onClose={() => setAlert(null)}
@@ -109,7 +109,7 @@ const FileCard = ({ file }) => {
             to={`/files/${file.id}`}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-md text-sm font-medium transition duration-300"
           >
-            {t('viewDetails', lang)}
+            View Details
           </Link>
           <button
             onClick={handleDownload}
