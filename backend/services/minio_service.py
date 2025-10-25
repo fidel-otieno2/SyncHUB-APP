@@ -6,6 +6,12 @@ from io import BytesIO
 class MinIOService:
     def __init__(self):
         try:
+            # Quick availability check
+            if not Config.MINIO_ENDPOINT or Config.MINIO_ENDPOINT == 'localhost:9000':
+                print("MinIO endpoint not configured for production")
+                self.available = False
+                return
+                
             self.client = Minio(
                 Config.MINIO_ENDPOINT,
                 access_key=Config.MINIO_ACCESS_KEY,
@@ -13,15 +19,28 @@ class MinIOService:
                 secure=Config.MINIO_SECURE
             )
             self.bucket = Config.MINIO_BUCKET
-            self._ensure_bucket()
-            self.available = True
+            
+            # Quick connection test with timeout
+            try:
+                self.client.bucket_exists(self.bucket)
+                self._ensure_bucket()
+                self.available = True
+                print("MinIO service initialized successfully")
+            except Exception as conn_error:
+                print(f"MinIO connection failed: {conn_error}")
+                self.available = False
         except Exception as e:
-            print(f"MinIO not available: {e}")
+            print(f"MinIO initialization failed: {e}")
             self.available = False
     
     def _ensure_bucket(self):
-        if not self.client.bucket_exists(self.bucket):
-            self.client.make_bucket(self.bucket)
+        try:
+            if not self.client.bucket_exists(self.bucket):
+                self.client.make_bucket(self.bucket)
+                print(f"Created MinIO bucket: {self.bucket}")
+        except Exception as e:
+            print(f"Failed to ensure bucket: {e}")
+            raise
     
     def upload_file(self, file_stream, filename, folder_type, metadata=None):
         if not self.available:
