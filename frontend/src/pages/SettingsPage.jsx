@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import Alert from '../components/Alert';
+import Toast from '../components/Toast';
 
 const SettingsPage = () => {
   const { user } = useAuth();
@@ -54,7 +54,7 @@ const SettingsPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8">
       {alert && (
-        <Alert
+        <Toast
           message={alert.message}
           type={alert.type}
           onClose={() => setAlert(null)}
