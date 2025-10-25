@@ -1,19 +1,12 @@
 from flask import Blueprint, request, jsonify, Response
-from minio import Minio
 import uuid
 import mimetypes
-from io import BytesIO
 from datetime import datetime
+from services.cloudinary_service import upload_file, delete_file, get_file_url
 
 files_bp = Blueprint('files', __name__)
 
-def get_minio_client():
-    return Minio(
-        'localhost:9000',
-        access_key='minioadmin',
-        secret_key='minioadmin',
-        secure=False
-    )
+# Cloudinary service handles file operations
 
 @files_bp.route('', methods=['GET', 'OPTIONS'])
 def get_files():
