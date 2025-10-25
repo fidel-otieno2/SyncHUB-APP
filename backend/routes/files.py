@@ -1,23 +1,76 @@
 from flask import Blueprint, request, jsonify, Response
+from minio import Minio
 import uuid
 import mimetypes
+from io import BytesIO
 from datetime import datetime
-from services.cloudinary_service import upload_file, delete_file, get_file_url
+from services.cloudinary_service import upload_file as cloudinary_upload, delete_file as cloudinary_delete
 
 files_bp = Blueprint('files', __name__)
 
-# Cloudinary service handles file operations
+def get_minio_client():
+    return Minio(
+        'localhost:9000',
+        access_key='minioadmin',
+        secret_key='minioadmin',
+        secure=False
+    )
 
 @files_bp.route('', methods=['GET', 'OPTIONS'])
 def get_files():
     if request.method == 'OPTIONS':
         return '', 200
     
-    # Return empty array for now - files will be stored in Cloudinary
-    return jsonify([]), 200
+    try:
+        # Try to connect to MinIO, but return empty array if not available
+        minio_client = get_minio_client()
+        bucket_name = 'synchub-files'
+        files = []
+        
+        if minio_client.bucket_exists(bucket_name):
+            objects = minio_client.list_objects(bucket_name, recursive=True)
+            for obj in objects:
+                try:
+                    obj_stat = minio_client.stat_object(bucket_name, obj.object_name)
+                    metadata = obj_stat.metadata or {}
+                    
+                    def get_metadata(key):
+                        return (metadata.get(f'x-amz-meta-{key}') or 
+                               metadata.get(key) or 
+                               metadata.get(key.lower()) or '')
+                    
+                    path_parts = obj.object_name.split('/')
+                    if len(path_parts) > 1:
+                        folder_type = path_parts[0]
+                        filename_part = path_parts[1]
+                        file_id = filename_part.split('_')[0] if '_' in filename_part else filename_part
+                    else:
+                        folder_type = 'documents'
+                        file_id = obj.object_name.split('_')[0] if '_' in obj.object_name else obj.object_name
+                    
+                    files.append({
+                        'id': file_id,
+                        'filename': get_metadata('original_filename') or obj.object_name.split('/')[-1],
+                        'title': get_metadata('title') or obj.object_name.split('/')[-1],
+                        'description': get_metadata('description'),
+                        'folder_type': folder_type,
+                        'size': obj.size,
+                        'created_at': obj.last_modified.isoformat() if obj.last_modified else None,
+                        'device_name': get_metadata('device_name') or 'Unknown Device',
+                        'object_name': obj.object_name
+                    })
+                except Exception as e:
+                    print(f"Error processing file {obj.object_name}: {e}")
+                    continue
+        
+        return jsonify(files), 200
+        
+    except Exception as e:
+        print(f"Error fetching files (MinIO not available): {str(e)}")
+        return jsonify([]), 200
 
 @files_bp.route('/upload', methods=['POST', 'OPTIONS'])
-def upload_file_endpoint():
+def upload_file():
     if request.method == 'OPTIONS':
         return '', 200
     
@@ -26,31 +79,41 @@ def upload_file_endpoint():
             return jsonify({'error': 'No file provided'}), 400
         
         file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+            
         title = request.form.get('title', file.filename)
         folder_type = request.form.get('folder_type', 'documents')
         device_name = request.form.get('device_name', 'Unknown Device')
+        description = request.form.get('description', '')
         
         file_id = str(uuid.uuid4())
         filename = f"{file_id}_{file.filename}"
         
         # Upload to Cloudinary
-        result = upload_file(file, filename, folder_type)
+        file.stream.seek(0)
+        result = cloudinary_upload(file.stream, filename, folder_type)
         
         if result['success']:
             return jsonify({
                 'message': 'File uploaded successfully',
                 'file_id': file_id,
                 'filename': file.filename,
+                'title': title,
+                'description': description,
                 'folder_type': folder_type,
+                'size': result['size'],
+                'device_name': device_name,
                 'url': result['url'],
-                'size': result['size']
+                'public_id': result['public_id'],
+                'created_at': datetime.utcnow().isoformat()
             }), 200
         else:
             return jsonify({'error': result['error']}), 500
         
     except Exception as e:
         print(f"Upload error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Upload failed: {str(e)}'}), 500
 
 @files_bp.route('/by-folder/<folder_type>', methods=['GET', 'OPTIONS'])
 def get_files_by_folder(folder_type):
