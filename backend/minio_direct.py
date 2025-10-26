@@ -4,19 +4,38 @@ import os
 
 minio_direct_bp = Blueprint('minio_direct', __name__)
 
-# Direct MinIO connection
-minio_client = Minio(
-    'localhost:9000',
-    access_key='minioadmin',
-    secret_key='minioadmin',
-    secure=False
-)
+# Environment-aware MinIO connection
+try:
+    MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT', 'localhost:9000')
+    MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY', 'minioadmin')
+    MINIO_SECRET_KEY = os.getenv('MINIO_SECRET_KEY', 'minioadmin')
+    MINIO_SECURE = os.getenv('MINIO_SECURE', 'False').lower() == 'true'
+    MINIO_BUCKET = os.getenv('MINIO_BUCKET', 'synchub-files')
+    
+    minio_client = Minio(
+        MINIO_ENDPOINT,
+        access_key=MINIO_ACCESS_KEY,
+        secret_key=MINIO_SECRET_KEY,
+        secure=MINIO_SECURE
+    )
+    
+    # Test connection
+    minio_client.bucket_exists(MINIO_BUCKET)
+    MINIO_AVAILABLE = True
+    print(f"MinIO connected: {MINIO_ENDPOINT}")
+except Exception as e:
+    print(f"MinIO not available: {e}")
+    MINIO_AVAILABLE = False
+    minio_client = None
 
 @minio_direct_bp.route('', methods=['GET'])
 def get_all_files():
+    if not MINIO_AVAILABLE:
+        return jsonify([]), 200
+    
     try:
         files = []
-        objects = minio_client.list_objects('synchub-files', recursive=True)
+        objects = minio_client.list_objects(MINIO_BUCKET, recursive=True)
         
         for obj in objects:
             folder_type = obj.object_name.split('/')[0] if '/' in obj.object_name else 'others'
@@ -47,6 +66,9 @@ def get_all_files():
 
 @minio_direct_bp.route('/by-folder/<folder_type>', methods=['GET'])
 def get_files_by_folder(folder_type):
+    if not MINIO_AVAILABLE:
+        return jsonify([]), 200
+    
     try:
         files = []
         # Map frontend folder names to MinIO folder names
@@ -62,7 +84,7 @@ def get_files_by_folder(folder_type):
         search_folders = folder_map.get(folder_type, [folder_type])
         
         for search_folder in search_folders:
-            objects = minio_client.list_objects('synchub-files', prefix=f'{search_folder}/', recursive=True)
+            objects = minio_client.list_objects(MINIO_BUCKET, prefix=f'{search_folder}/', recursive=True)
             
             for obj in objects:
                 filename = obj.object_name.split('/')[-1]
@@ -91,8 +113,11 @@ def get_files_by_folder(folder_type):
 
 @minio_direct_bp.route('/<file_id>', methods=['GET'])
 def get_file_details(file_id):
+    if not MINIO_AVAILABLE:
+        return jsonify({'error': 'Storage not available'}), 503
+    
     try:
-        objects = minio_client.list_objects('synchub-files', recursive=True)
+        objects = minio_client.list_objects(MINIO_BUCKET, recursive=True)
         
         for obj in objects:
             filename = obj.object_name.split('/')[-1]
@@ -128,8 +153,11 @@ def download_file(file_id):
     if request.method == 'OPTIONS':
         return '', 200
     
+    if not MINIO_AVAILABLE:
+        return jsonify({'error': 'Storage not available'}), 503
+    
     try:
-        objects = minio_client.list_objects('synchub-files', recursive=True)
+        objects = minio_client.list_objects(MINIO_BUCKET, recursive=True)
         
         for obj in objects:
             filename = obj.object_name.split('/')[-1]
@@ -138,7 +166,7 @@ def download_file(file_id):
             
             if extracted_id == file_id or file_id in obj.object_name:
                 # Get the file from MinIO
-                response = minio_client.get_object('synchub-files', obj.object_name)
+                response = minio_client.get_object(MINIO_BUCKET, obj.object_name)
                 file_data = response.read()
                 
                 from flask import Response
