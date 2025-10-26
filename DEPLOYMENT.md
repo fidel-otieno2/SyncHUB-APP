@@ -1,71 +1,63 @@
-# SyncHUB Deployment Guide
+# 🚀 SyncHUB Deployment Guide
 
 ## Backend Deployment (Render)
 
-### 1. Environment Variables for Render
-Set these in your Render service settings:
+1. **Create Render Account**: Sign up at render.com
+2. **Connect GitHub**: Link your repository
+3. **Create Web Service**:
+   - Runtime: Python 3
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `gunicorn app:app`
 
-```bash
-# Required
-DATABASE_URL=your-supabase-postgresql-url
-JWT_SECRET=your-jwt-secret-key
-
-# Optional MinIO (if you deploy MinIO separately)
-MINIO_ENDPOINT=your-minio-service.onrender.com
-MINIO_ACCESS_KEY=your-access-key
-MINIO_SECRET_KEY=your-secret-key
-MINIO_BUCKET=synchub-files
-MINIO_SECURE=true
-
-# Frontend URL
-FRONTEND_URL=https://your-frontend.vercel.app
-```
-
-### 2. Deploy MinIO on Render (Optional)
-1. Create new Web Service on Render
-2. Use Docker image: `minio/minio`
-3. Set start command: `minio server /data --console-address ":9001"`
-4. Set environment variables:
-   - `MINIO_ROOT_USER=your-access-key`
-   - `MINIO_ROOT_PASSWORD=your-secret-key`
-
-### 3. Backend Service Settings
-- **Build Command**: `pip install -r requirements.txt`
-- **Start Command**: `gunicorn app:app`
-- **Environment**: Python 3.11
+4. **Environment Variables**:
+   ```
+   DATABASE_URL=your_supabase_url
+   JWT_SECRET=your_jwt_secret
+   CLOUDINARY_CLOUD_NAME=your_cloudinary_name
+   CLOUDINARY_API_KEY=your_cloudinary_key
+   CLOUDINARY_API_SECRET=your_cloudinary_secret
+   FRONTEND_URL=https://your-app.vercel.app
+   ```
 
 ## Frontend Deployment (Vercel)
 
-### 1. Environment Variables for Vercel
-```bash
-VITE_API_URL=https://your-backend.onrender.com
-```
+1. **Create Vercel Account**: Sign up at vercel.com
+2. **Import Project**: Connect GitHub repository
+3. **Configure Build**:
+   - Framework: Vite
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
 
-### 2. Build Settings
-- **Framework Preset**: Vite
-- **Build Command**: `npm run build`
-- **Output Directory**: `dist`
+4. **Environment Variables**:
+   ```
+   VITE_API_URL=https://your-backend.onrender.com
+   ```
 
-## Local Development
+## Database Setup (Supabase)
 
-### Backend
-```bash
-cd backend
-pip install -r requirements.txt
-# Copy .env.example to .env and configure
-python app.py
-```
+1. **Create Supabase Project**
+2. **Get Connection String**
+3. **Run Migrations** (if needed)
 
-### Frontend
-```bash
-cd frontend
-npm install
-# Copy .env.example to .env and configure
-npm run dev
-```
+## File Storage (Cloudinary)
 
-## Notes
-- The app works without MinIO (uses fallback responses)
-- MinIO is optional for deployment
-- All endpoints handle MinIO unavailability gracefully
-- Frontend automatically uses environment-based API URL
+1. **Create Cloudinary Account**
+2. **Get API Credentials**
+3. **Configure Environment Variables**
+
+## ✅ Features Now Cloud-Ready
+
+- ✅ File upload to Cloudinary
+- ✅ Database storage in Supabase
+- ✅ No local dependencies
+- ✅ Auto-scaling backend
+- ✅ Global CDN for files
+- ✅ Always-available service
+
+## 🔧 Changes Made
+
+- Replaced MinIO with Cloudinary
+- Removed ngrok dependency
+- Added Gunicorn for production
+- Created deployment configs
+- Updated environment variables
