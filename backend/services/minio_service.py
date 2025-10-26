@@ -6,9 +6,9 @@ from io import BytesIO
 class MinIOService:
     def __init__(self):
         try:
-            # Quick availability check
-            if not Config.MINIO_ENDPOINT or Config.MINIO_ENDPOINT == 'localhost:9000':
-                print("MinIO endpoint not configured for production")
+            # Allow localhost for development
+            if not Config.MINIO_ENDPOINT:
+                print("MinIO endpoint not configured")
                 self.available = False
                 return
                 

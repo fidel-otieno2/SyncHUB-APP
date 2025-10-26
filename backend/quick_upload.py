@@ -1,11 +1,9 @@
 from flask import Blueprint, request, jsonify
 import uuid
 from datetime import datetime
+from services.minio_service import minio_service
 
 quick_upload_bp = Blueprint('quick_upload', __name__)
-
-# In-memory storage for demo
-files_storage = []
 
 @quick_upload_bp.route('/upload', methods=['POST', 'OPTIONS'])
 def quick_upload():
@@ -41,8 +39,21 @@ def quick_upload():
             'created_at': datetime.utcnow().isoformat()
         }
         
-        # Store in memory
-        files_storage.append(file_data)
+        # Upload to MinIO if available
+        if minio_service.available:
+            try:
+                file.stream.seek(0)
+                result = minio_service.upload_file(
+                    file.stream, 
+                    file.filename, 
+                    folder_type,
+                    {'title': title, 'description': description, 'device': device_name}
+                )
+                file_data['url'] = result['url']
+                file_data['size'] = result['size']
+                file_data['storage_type'] = 'minio'
+            except Exception as e:
+                print(f"MinIO upload failed: {e}")
         
         return jsonify({
             'message': 'File uploaded successfully',
@@ -54,9 +65,20 @@ def quick_upload():
 
 @quick_upload_bp.route('', methods=['GET'])
 def get_all_files():
-    return jsonify(files_storage), 200
+    print(f"MinIO available: {minio_service.available}")
+    if minio_service.available:
+        files = minio_service.list_files()
+        print(f"Found {len(files)} files in MinIO")
+        return jsonify(files), 200
+    print("MinIO not available, returning empty list")
+    return jsonify([]), 200
 
 @quick_upload_bp.route('/by-folder/<folder_type>', methods=['GET'])
 def get_files_by_folder(folder_type):
-    folder_files = [f for f in files_storage if f.get('folder_type') == folder_type]
-    return jsonify(folder_files), 200
+    print(f"MinIO available: {minio_service.available}, folder: {folder_type}")
+    if minio_service.available:
+        files = minio_service.list_files(folder_type)
+        print(f"Found {len(files)} files in folder {folder_type}")
+        return jsonify(files), 200
+    print(f"MinIO not available for folder {folder_type}")
+    return jsonify([]), 200
