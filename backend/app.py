@@ -30,11 +30,13 @@ def create_app():
     from routes.devices import devices_bp
     from routes.sync import sync_bp
     from quick_upload import quick_upload_bp
+    from minio_direct import minio_direct_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(devices_bp, url_prefix='/api/devices')
     app.register_blueprint(sync_bp, url_prefix='/api/sync')
     app.register_blueprint(quick_upload_bp, url_prefix='/api/files')
+    app.register_blueprint(minio_direct_bp, url_prefix='/api/files')
 
     
     # Root endpoint

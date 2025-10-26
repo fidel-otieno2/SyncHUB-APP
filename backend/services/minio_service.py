@@ -87,8 +87,27 @@ class MinIOService:
             return []
         
         try:
-            prefix = f"{folder_type}/" if folder_type else ""
-            objects = self.client.list_objects(self.bucket, prefix=prefix, recursive=True)
+            # Handle folder name mapping
+            folder_mapping = {
+                'music': ['music', 'audio'],
+                'images': ['images', 'pictures'],
+                'videos': ['videos', 'video'],
+                'documents': ['documents'],
+                'archives': ['archives'],
+                'others': ['others']
+            }
+            
+            if folder_type:
+                # Get all possible folder names for this type
+                possible_folders = folder_mapping.get(folder_type, [folder_type])
+                all_files = []
+                for folder in possible_folders:
+                    prefix = f"{folder}/"
+                    objects = self.client.list_objects(self.bucket, prefix=prefix, recursive=True)
+                    all_files.extend(list(objects))
+                objects = all_files
+            else:
+                objects = self.client.list_objects(self.bucket, recursive=True)
             
             files = []
             for obj in objects:
