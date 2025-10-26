@@ -8,11 +8,13 @@ class Config:
     
     # Handle PostgreSQL URL conversion
     if DATABASE_URL and 'postgresql' in DATABASE_URL:
-        # Ensure psycopg format for Python 3.13 compatibility
-        if 'postgresql://' in DATABASE_URL and 'postgresql+psycopg' not in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg://')
+        # Use pg8000 driver (pure Python, works with all Python versions)
+        if 'postgresql://' in DATABASE_URL and 'postgresql+pg8000' not in DATABASE_URL:
+            DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+pg8000://')
         elif 'postgresql+psycopg2://' in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql+psycopg2://', 'postgresql+psycopg://')
+            DATABASE_URL = DATABASE_URL.replace('postgresql+psycopg2://', 'postgresql+pg8000://')
+        elif 'postgresql+psycopg://' in DATABASE_URL:
+            DATABASE_URL = DATABASE_URL.replace('postgresql+psycopg://', 'postgresql+pg8000://')
         # Add SSL requirement for Supabase
         if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL:
             DATABASE_URL += '?sslmode=require'
@@ -23,11 +25,7 @@ class Config:
         'pool_pre_ping': True,
         'pool_recycle': 300,
         'pool_timeout': 30,
-        'max_overflow': 10,
-        'connect_args': {
-            'connect_timeout': 30,
-            'sslmode': 'require'
-        }
+        'max_overflow': 10
     }
     JWT_SECRET_KEY = os.getenv('JWT_SECRET', 'your-secret-key')
     
