@@ -6,13 +6,11 @@ load_dotenv()
 class Config:
     DATABASE_URL = os.getenv('DATABASE_URL')
     
-    # Handle PostgreSQL URL conversion and connection issues
+    # Handle PostgreSQL URL - let SQLAlchemy 2.x handle driver selection
     if DATABASE_URL and 'postgresql' in DATABASE_URL:
-        # Use psycopg3 driver for Python 3.13 compatibility
+        # Clean up URL for SQLAlchemy 2.x
         if 'postgresql+psycopg2' in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql+psycopg2', 'postgresql+psycopg')
-        elif 'postgresql://' in DATABASE_URL and 'postgresql+psycopg' not in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg://')
+            DATABASE_URL = DATABASE_URL.replace('postgresql+psycopg2', 'postgresql')
         # Add SSL requirement for Supabase
         if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL:
             DATABASE_URL += '?sslmode=require'
