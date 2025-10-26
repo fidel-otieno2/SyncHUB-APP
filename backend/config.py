@@ -8,9 +8,11 @@ class Config:
     
     # Handle PostgreSQL URL conversion and connection issues
     if DATABASE_URL and 'postgresql' in DATABASE_URL:
-        # Use psycopg2 driver
-        if 'postgresql://' in DATABASE_URL and 'postgresql+psycopg2' not in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg2://')
+        # Use psycopg3 driver for Python 3.13 compatibility
+        if 'postgresql+psycopg2' in DATABASE_URL:
+            DATABASE_URL = DATABASE_URL.replace('postgresql+psycopg2', 'postgresql+psycopg')
+        elif 'postgresql://' in DATABASE_URL and 'postgresql+psycopg' not in DATABASE_URL:
+            DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg://')
         # Add SSL requirement for Supabase
         if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL:
             DATABASE_URL += '?sslmode=require'
