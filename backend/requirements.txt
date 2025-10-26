@@ -1,13 +1,12 @@
 Flask==2.3.3
 Flask-RESTful==0.3.10
-Flask-SQLAlchemy==3.1.1
-SQLAlchemy==2.0.36
+Flask-SQLAlchemy==3.0.5
 Flask-Migrate==4.0.5
 Flask-JWT-Extended==4.5.2
 Flask-CORS==4.0.0
 marshmallow==3.19.0
-marshmallow-sqlalchemy==0.28.2
-psycopg[binary]==3.2.12
+marshmallow-sqlalchemy==0.29.0
+psycopg2-binary==2.9.9
 minio==7.2.0
 python-dotenv==1.0.0
 bcrypt==4.0.1
