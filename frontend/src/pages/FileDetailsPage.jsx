@@ -9,7 +9,8 @@ import Tooltip from '../components/Tooltip';
 import Toast from '../components/Toast';
 
 const FileDetailsPage = () => {
-  const { id } = useParams();
+  const { fileId, id } = useParams();
+  const actualId = fileId || id; // Handle both route patterns
   const navigate = useNavigate();
   const { files, downloadFile, deleteFile } = useFiles();
   const [file, setFile] = useState(null);
@@ -22,7 +23,9 @@ const FileDetailsPage = () => {
 
   useEffect(() => {
     const fetchFileDetails = async () => {
-      if (!id) {
+      console.log('File ID from URL params:', actualId);
+      if (!actualId) {
+        console.log('No ID found in URL params');
         setError('No file ID provided');
         setLoading(false);
         return;
@@ -32,7 +35,7 @@ const FileDetailsPage = () => {
         setLoading(true);
         setError(null);
         
-        const response = await axiosInstance.get(`/api/files/${id}`);
+        const response = await axiosInstance.get(`/api/files/${actualId}`);
         const fileData = response.data;
         
         // Format the file data with proper details
@@ -64,7 +67,7 @@ const FileDetailsPage = () => {
     };
 
     fetchFileDetails();
-  }, [id]);
+  }, [actualId]);
 
   const formatFileSize = (bytes) => {
     if (!bytes) return 'Unknown';
@@ -76,7 +79,7 @@ const FileDetailsPage = () => {
 
   const handleDownload = async () => {
     try {
-      const response = await axiosInstance.get(`/api/files/${file.id}/download`, {
+      const response = await axiosInstance.get(`/api/files/${actualId}/download`, {
         responseType: 'blob'
       });
       

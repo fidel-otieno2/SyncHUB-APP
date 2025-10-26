@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request, Response
 from minio import Minio
 import os
 
@@ -22,13 +22,21 @@ def get_all_files():
             folder_type = obj.object_name.split('/')[0] if '/' in obj.object_name else 'others'
             filename = obj.object_name.split('/')[-1]
             
+            # Extract UUID from filename if present, make URL-safe
+            if '_' in filename:
+                file_id = filename.split('_')[0]
+            else:
+                # Create URL-safe ID from filename
+                file_id = filename.replace('.', '-').replace(' ', '-').replace('/', '-').replace('(', '').replace(')', '').replace('[', '').replace(']', '')
+            
             files.append({
-                'id': obj.object_name.replace('/', '_'),
+                'id': file_id,
                 'filename': filename,
                 'title': filename,
                 'folder_type': folder_type,
                 'size': obj.size,
                 'url': f'http://localhost:9000/synchub-files/{obj.object_name}',
+                'object_name': obj.object_name,
                 'created_at': obj.last_modified.isoformat() if obj.last_modified else None
             })
         
@@ -58,13 +66,21 @@ def get_files_by_folder(folder_type):
             
             for obj in objects:
                 filename = obj.object_name.split('/')[-1]
+                # Extract UUID from filename if present, make URL-safe
+                if '_' in filename:
+                    file_id = filename.split('_')[0]
+                else:
+                    # Create URL-safe ID from filename
+                    file_id = filename.replace('.', '-').replace(' ', '-').replace('/', '-').replace('(', '').replace(')', '').replace('[', '').replace(']', '')
+                
                 files.append({
-                    'id': obj.object_name.replace('/', '_'),
+                    'id': file_id,
                     'filename': filename,
                     'title': filename,
                     'folder_type': folder_type,
                     'size': obj.size,
                     'url': f'http://localhost:9000/synchub-files/{obj.object_name}',
+                    'object_name': obj.object_name,
                     'created_at': obj.last_modified.isoformat() if obj.last_modified else None
                 })
         
@@ -72,3 +88,73 @@ def get_files_by_folder(folder_type):
     except Exception as e:
         print(f"MinIO folder error: {e}")
         return jsonify([]), 200
+
+@minio_direct_bp.route('/<file_id>', methods=['GET'])
+def get_file_details(file_id):
+    try:
+        objects = minio_client.list_objects('synchub-files', recursive=True)
+        
+        for obj in objects:
+            filename = obj.object_name.split('/')[-1]
+            # Check if this file matches the ID
+            if '_' in filename:
+                extracted_id = filename.split('_')[0]
+            else:
+                extracted_id = filename.replace('.', '-').replace(' ', '-').replace('/', '-').replace('(', '').replace(')', '').replace('[', '').replace(']', '')
+            
+            if extracted_id == file_id or file_id in obj.object_name:
+                folder_type = obj.object_name.split('/')[0] if '/' in obj.object_name else 'others'
+                
+                return jsonify({
+                    'id': file_id,
+                    'filename': filename,
+                    'title': filename,
+                    'description': '',
+                    'folder_type': folder_type,
+                    'size': obj.size,
+                    'url': f'http://localhost:9000/synchub-files/{obj.object_name}',
+                    'object_name': obj.object_name,
+                    'device_name': 'Unknown Device',
+                    'created_at': obj.last_modified.isoformat() if obj.last_modified else None
+                }), 200
+        
+        return jsonify({'error': 'File not found'}), 404
+    except Exception as e:
+        print(f"MinIO file details error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@minio_direct_bp.route('/<file_id>/download', methods=['GET', 'OPTIONS'])
+def download_file(file_id):
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    try:
+        objects = minio_client.list_objects('synchub-files', recursive=True)
+        
+        for obj in objects:
+            filename = obj.object_name.split('/')[-1]
+            # Check if this file matches the ID
+            extracted_id = filename.split('_')[0] if '_' in filename else filename.replace('.', '-').replace(' ', '-').replace('/', '-').replace('(', '').replace(')', '').replace('[', '').replace(']', '')
+            
+            if extracted_id == file_id or file_id in obj.object_name:
+                # Get the file from MinIO
+                response = minio_client.get_object('synchub-files', obj.object_name)
+                file_data = response.read()
+                
+                from flask import Response
+                return Response(
+                    file_data,
+                    mimetype='application/octet-stream',
+                    headers={
+                        'Content-Disposition': f'attachment; filename="{filename}"',
+                        'Content-Length': str(len(file_data)),
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Content-Type'
+                    }
+                )
+        
+        return jsonify({'error': 'File not found'}), 404
+    except Exception as e:
+        print(f"MinIO download error: {e}")
+        return jsonify({'error': str(e)}), 500
