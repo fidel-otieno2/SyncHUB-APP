@@ -12,11 +12,13 @@ class Config:
         import os
         is_production = os.getenv('RENDER') or os.getenv('HEROKU')
         
-        # Use psycopg2 for both local and production
-        if 'postgresql://' in DATABASE_URL and 'postgresql+psycopg2' not in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg2://')
+        # Use psycopg for both local and production
+        if 'postgresql://' in DATABASE_URL and 'postgresql+psycopg' not in DATABASE_URL:
+            DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg://')
+        elif 'postgresql+psycopg2://' in DATABASE_URL:
+            DATABASE_URL = DATABASE_URL.replace('postgresql+psycopg2://', 'postgresql+psycopg://')
         elif 'postgresql+pg8000://' in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql+pg8000://', 'postgresql+psycopg2://')
+            DATABASE_URL = DATABASE_URL.replace('postgresql+pg8000://', 'postgresql+psycopg://')
         
         # Add SSL requirement for Supabase
         if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL:
