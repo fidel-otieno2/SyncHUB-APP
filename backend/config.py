@@ -30,18 +30,27 @@ class Config:
             if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL:
                 DATABASE_URL += '?sslmode=require'
     
-    SQLALCHEMY_DATABASE_URI = DATABASE_URL or 'postgresql://postgres:password@localhost:5432/synchub'
+    # Use SQLite for deployment if PostgreSQL fails
+    if DATABASE_URL and 'postgresql' in DATABASE_URL:
+        SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    else:
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///synchub.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # Configure engine options based on driver
     if DATABASE_URL and 'pg8000' in DATABASE_URL:
-        # pg8000 specific configuration
+        # pg8000 specific configuration for Supabase
+        import ssl
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
         SQLALCHEMY_ENGINE_OPTIONS = {
             'pool_pre_ping': True,
             'pool_recycle': 300,
             'pool_timeout': 30,
             'max_overflow': 10,
             'connect_args': {
-                'ssl_context': True
+                'ssl_context': ssl_context
             }
         }
     else:
