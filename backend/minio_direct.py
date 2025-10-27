@@ -105,6 +105,15 @@ def get_file_details(file_id):
             if extracted_id == file_id or file_id in obj.object_name:
                 folder_type = obj.object_name.split('/')[0] if '/' in obj.object_name else 'others'
                 
+                # Determine content type
+                content_type = 'application/octet-stream'
+                if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                    content_type = f'image/{filename.split(".")[-1].lower()}'
+                elif filename.lower().endswith(('.mp4', '.avi', '.mov', '.webm')):
+                    content_type = f'video/{filename.split(".")[-1].lower()}'
+                elif filename.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a')):
+                    content_type = f'audio/{filename.split(".")[-1].lower()}'
+                
                 return jsonify({
                     'id': file_id,
                     'filename': filename,
@@ -112,6 +121,7 @@ def get_file_details(file_id):
                     'description': '',
                     'folder_type': folder_type,
                     'size': obj.size,
+                    'content_type': content_type,
                     'url': f'http://localhost:9000/synchub-files/{obj.object_name}',
                     'object_name': obj.object_name,
                     'device_name': 'Unknown Device',
@@ -121,6 +131,47 @@ def get_file_details(file_id):
         return jsonify({'error': 'File not found'}), 404
     except Exception as e:
         print(f"MinIO file details error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@minio_direct_bp.route('/stream/<file_id>', methods=['GET', 'OPTIONS'])
+def stream_file(file_id):
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    try:
+        objects = minio_client.list_objects('synchub-files', recursive=True)
+        
+        for obj in objects:
+            filename = obj.object_name.split('/')[-1]
+            extracted_id = filename.split('_')[0] if '_' in filename else filename.replace('.', '-').replace(' ', '-').replace('/', '-').replace('(', '').replace(')', '').replace('[', '').replace(']', '')
+            
+            if extracted_id == file_id or file_id in obj.object_name:
+                response = minio_client.get_object('synchub-files', obj.object_name)
+                file_data = response.read()
+                
+                # Determine content type
+                content_type = 'application/octet-stream'
+                if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                    content_type = f'image/{filename.split(".")[-1].lower()}'
+                elif filename.lower().endswith(('.mp4', '.avi', '.mov', '.webm')):
+                    content_type = f'video/{filename.split(".")[-1].lower()}'
+                elif filename.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a')):
+                    content_type = f'audio/{filename.split(".")[-1].lower()}'
+                
+                return Response(
+                    file_data,
+                    mimetype=content_type,
+                    headers={
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Content-Type',
+                        'Cache-Control': 'public, max-age=3600'
+                    }
+                )
+        
+        return jsonify({'error': 'File not found'}), 404
+    except Exception as e:
+        print(f"MinIO stream error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @minio_direct_bp.route('/<file_id>/download', methods=['GET', 'OPTIONS'])

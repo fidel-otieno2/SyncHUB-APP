@@ -8,13 +8,23 @@ class Config:
     
     # Handle PostgreSQL URL conversion
     if DATABASE_URL and 'postgresql' in DATABASE_URL:
-        # Use pg8000 driver (pure Python, works with all Python versions)
-        if 'postgresql://' in DATABASE_URL and 'postgresql+pg8000' not in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+pg8000://')
-        elif 'postgresql+psycopg2://' in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql+psycopg2://', 'postgresql+pg8000://')
-        elif 'postgresql+psycopg://' in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql+psycopg://', 'postgresql+pg8000://')
+        # Use pg8000 for deployment, psycopg2 for local development
+        import os
+        is_production = os.getenv('RENDER') or os.getenv('HEROKU')
+        
+        if is_production:
+            # Use pg8000 for deployment (Python 3.13 compatible)
+            if 'postgresql://' in DATABASE_URL and 'postgresql+pg8000' not in DATABASE_URL:
+                DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+pg8000://')
+            elif 'postgresql+psycopg2://' in DATABASE_URL:
+                DATABASE_URL = DATABASE_URL.replace('postgresql+psycopg2://', 'postgresql+pg8000://')
+        else:
+            # Use psycopg2 for local development
+            if 'postgresql://' in DATABASE_URL and 'postgresql+psycopg2' not in DATABASE_URL:
+                DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg2://')
+            elif 'postgresql+pg8000://' in DATABASE_URL:
+                DATABASE_URL = DATABASE_URL.replace('postgresql+pg8000://', 'postgresql+psycopg2://')
+        
         # Add SSL requirement for Supabase
         if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL:
             DATABASE_URL += '?sslmode=require'
