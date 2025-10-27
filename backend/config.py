@@ -32,12 +32,26 @@ class Config:
     
     SQLALCHEMY_DATABASE_URI = DATABASE_URL or 'postgresql://postgres:password@localhost:5432/synchub'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_pre_ping': True,
-        'pool_recycle': 300,
-        'pool_timeout': 30,
-        'max_overflow': 10
-    }
+    # Configure engine options based on driver
+    if DATABASE_URL and 'pg8000' in DATABASE_URL:
+        # pg8000 specific configuration
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+            'pool_timeout': 30,
+            'max_overflow': 10,
+            'connect_args': {
+                'ssl_context': True
+            }
+        }
+    else:
+        # psycopg2 configuration
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+            'pool_timeout': 30,
+            'max_overflow': 10
+        }
     JWT_SECRET_KEY = os.getenv('JWT_SECRET', 'your-secret-key')
     
     # MinIO Configuration
