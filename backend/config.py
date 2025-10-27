@@ -25,8 +25,8 @@ class Config:
             elif 'postgresql+pg8000://' in DATABASE_URL:
                 DATABASE_URL = DATABASE_URL.replace('postgresql+pg8000://', 'postgresql+psycopg2://')
         
-        # Add SSL requirement for Supabase
-        if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL:
+        # Add SSL requirement for Supabase (only for psycopg2)
+        if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL and not is_production:
             DATABASE_URL += '?sslmode=require'
     
     SQLALCHEMY_DATABASE_URI = DATABASE_URL or 'postgresql://postgres:password@localhost:5432/synchub'
