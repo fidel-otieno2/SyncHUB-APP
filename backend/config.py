@@ -14,6 +14,8 @@ class Config:
         
         if is_production:
             # Use pg8000 for deployment (Python 3.13 compatible)
+            # Remove any SSL parameters that pg8000 doesn't support
+            DATABASE_URL = DATABASE_URL.split('?')[0]  # Remove query parameters
             if 'postgresql://' in DATABASE_URL and 'postgresql+pg8000' not in DATABASE_URL:
                 DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+pg8000://')
             elif 'postgresql+psycopg2://' in DATABASE_URL:
@@ -24,10 +26,9 @@ class Config:
                 DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg2://')
             elif 'postgresql+pg8000://' in DATABASE_URL:
                 DATABASE_URL = DATABASE_URL.replace('postgresql+pg8000://', 'postgresql+psycopg2://')
-        
-        # Add SSL requirement for Supabase (only for psycopg2)
-        if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL and not is_production:
-            DATABASE_URL += '?sslmode=require'
+            # Add SSL requirement for Supabase (only for psycopg2)
+            if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL:
+                DATABASE_URL += '?sslmode=require'
     
     SQLALCHEMY_DATABASE_URI = DATABASE_URL or 'postgresql://postgres:password@localhost:5432/synchub'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
