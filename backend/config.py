@@ -32,7 +32,13 @@ class Config:
         'pool_pre_ping': True,
         'pool_recycle': 300,
         'pool_timeout': 30,
-        'max_overflow': 10
+        'max_overflow': 10,
+        'connect_args': {
+            'sslmode': 'require',
+            'sslcert': None,
+            'sslkey': None,
+            'sslrootcert': None
+        }
     }
     JWT_SECRET_KEY = os.getenv('JWT_SECRET', 'your-secret-key')
     
