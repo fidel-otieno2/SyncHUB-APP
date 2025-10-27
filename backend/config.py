@@ -20,9 +20,7 @@ class Config:
         elif 'postgresql+pg8000://' in DATABASE_URL:
             DATABASE_URL = DATABASE_URL.replace('postgresql+pg8000://', 'postgresql+psycopg://')
         
-        # Add SSL requirement for Supabase
-        if 'supabase.com' in DATABASE_URL and 'sslmode' not in DATABASE_URL:
-            DATABASE_URL += '?sslmode=require'
+        # SSL is handled automatically by psycopg3 for Supabase
     
     # Use SQLite for deployment if PostgreSQL fails
     if DATABASE_URL and 'postgresql' in DATABASE_URL:
@@ -34,12 +32,11 @@ class Config:
         'pool_pre_ping': True,
         'pool_recycle': 300,
         'pool_timeout': 30,
-        'max_overflow': 10,
+        'pool_size': 5,
+        'max_overflow': 0,
         'connect_args': {
-            'sslmode': 'require',
-            'sslcert': None,
-            'sslkey': None,
-            'sslrootcert': None
+            'connect_timeout': 10,
+            'application_name': 'synchub-app'
         }
     }
     JWT_SECRET_KEY = os.getenv('JWT_SECRET', 'your-secret-key')
