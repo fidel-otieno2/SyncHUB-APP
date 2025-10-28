@@ -20,22 +20,28 @@ const SyncMonitorPage = () => {
     setIsSyncing(true);
     try {
       await syncAll();
-      // Add new log entry
-      setSyncLogs(prev => [{
-        id: Date.now(),
-        fileName: 'All Files',
-        device: 'Manual Sync',
-        status: 'Success',
-        timestamp: new Date()
-      }, ...prev]);
+      // Update existing entry instead of creating duplicates
+      setSyncLogs(prev => {
+        const filtered = prev.filter(log => !(log.fileName === 'All Files' && log.device === 'Manual Sync'));
+        return [{
+          id: Date.now(),
+          fileName: 'All Files',
+          device: 'Manual Sync',
+          status: 'Success',
+          timestamp: new Date()
+        }, ...filtered];
+      });
     } catch (error) {
-      setSyncLogs(prev => [{
-        id: Date.now(),
-        fileName: 'All Files',
-        device: 'Manual Sync',
-        status: 'Failed',
-        timestamp: new Date()
-      }, ...prev]);
+      setSyncLogs(prev => {
+        const filtered = prev.filter(log => !(log.fileName === 'All Files' && log.device === 'Manual Sync'));
+        return [{
+          id: Date.now(),
+          fileName: 'All Files',
+          device: 'Manual Sync',
+          status: 'Failed',
+          timestamp: new Date()
+        }, ...filtered];
+      });
     } finally {
       setIsSyncing(false);
     }

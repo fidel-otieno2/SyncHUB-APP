@@ -32,10 +32,10 @@ class Config:
         'pool_pre_ping': True,
         'pool_recycle': 300,
         'pool_timeout': 30,
-        'pool_size': 5,
+        'pool_size': 3,
         'max_overflow': 0,
         'connect_args': {
-            'connect_timeout': 10,
+            'connect_timeout': 30,
             'application_name': 'synchub-app'
         }
     }
