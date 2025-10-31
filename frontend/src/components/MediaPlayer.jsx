@@ -4,10 +4,8 @@ import Tooltip from './Tooltip';
 const MediaPlayer = ({ file }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   
-  // Use same logic as axios to detect correct backend URL
-  const isNetworkAccess = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-  const baseUrl = isNetworkAccess ? `http://${window.location.hostname}:5000` : 'http://localhost:5000';
-  const fileUrl = `${baseUrl}/api/files/stream/${file.id}`;
+  // Use the file URL from the backend response if available, otherwise fallback to stream endpoint
+  const fileUrl = file.url || `${window.location.origin}/api/files/stream/${file.id}`;
   
   const isAudio = file.content_type?.startsWith('audio/');
   const isVideo = file.content_type?.startsWith('video/');

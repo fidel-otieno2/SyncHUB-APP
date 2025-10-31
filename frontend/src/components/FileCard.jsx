@@ -37,10 +37,12 @@ const FileCard = ({ file }) => {
   };
 
   const folders = [
-    { value: 'video', label: '🎥 Videos' },
-    { value: 'audio', label: '🎵 Audio' },
-    { value: 'pictures', label: '🖼️ Pictures' },
-    { value: 'documents', label: '📄 Documents' }
+    { value: 'documents', label: '📄 Documents' },
+    { value: 'images', label: '🖼️ Images' },
+    { value: 'videos', label: '🎥 Videos' },
+    { value: 'music', label: '🎵 Music' },
+    { value: 'archives', label: '📦 Archives' },
+    { value: 'others', label: '📁 Others' }
   ];
 
   const getStatusColor = (status) => {

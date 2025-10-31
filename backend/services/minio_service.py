@@ -42,11 +42,10 @@ class MinIOService:
             print(f"Failed to ensure bucket: {e}")
             raise
     
-    def upload_file(self, file_stream, filename, folder_type, metadata=None):
+    def upload_file(self, file_stream, filename, folder_type, file_id, metadata=None):
         if not self.available:
             raise Exception("MinIO service not available")
         
-        file_id = str(uuid.uuid4())
         object_name = f"{folder_type}/{file_id}_{filename}"
         
         file_stream.seek(0)

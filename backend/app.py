@@ -19,24 +19,29 @@ def create_app():
     jwt = JWTManager(app)
     api = Api(app)
     swagger = Swagger(app)
-    CORS(app, 
-         origins=['*', 'https://sync-hub-app.vercel.app', 'http://localhost:5173'], 
-         supports_credentials=True, 
-         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-         allow_headers=['Content-Type', 'Authorization'])
+    CORS(
+        app,
+        origins=['*', 'https://sync-hub-app.vercel.app', 'http://localhost:5173'],
+        supports_credentials=True,
+        methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allow_headers=['Content-Type', 'Authorization']
+    )
     
-    # Register simple blueprints only
+    # Import blueprints
     from routes.auth import auth_bp
     from routes.devices import devices_bp
     from routes.sync import sync_bp
     from quick_upload import quick_upload_bp
-    from minio_direct import minio_direct_bp
+
     
+    # ✅ Register blueprints with unique prefixes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(devices_bp, url_prefix='/api/devices')
     app.register_blueprint(sync_bp, url_prefix='/api/sync')
+
+    # Main file upload/download routes
     app.register_blueprint(quick_upload_bp, url_prefix='/api/files')
-    app.register_blueprint(minio_direct_bp, url_prefix='/api/files')
+
 
     
     # Root endpoint
@@ -48,7 +53,8 @@ def create_app():
             'version': '1.0.0',
             'endpoints': {
                 'auth': '/api/auth/login, /api/auth/register',
-                'files': '/api/files, /api/files/upload',
+                'files': '/api/files, /api/files/upload, /api/files/<id>/download',
+
                 'devices': '/api/devices',
                 'test': '/api/test'
             }
@@ -71,16 +77,17 @@ def create_app():
     
     return app
 
-# Create app instance for gunicorn
+
+# Create app instance for gunicorn / local run
 app = create_app()
 
 if __name__ == '__main__':
     with app.app_context():
         try:
             db.create_all()
-            print("Database tables created successfully")
+            print("✅ Database tables created successfully")
         except Exception as e:
-            print(f"Error creating database tables: {e}")
+            print(f"❌ Error creating database tables: {e}")
     
     import os
     port = int(os.environ.get('PORT', 5000))

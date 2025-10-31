@@ -79,10 +79,11 @@ const FileDetailsPage = () => {
 
   const handleDownload = async () => {
     try {
+      // Always use the backend download endpoint for proper authentication
       const response = await axiosInstance.get(`/api/files/${actualId}/download`, {
         responseType: 'blob'
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -91,9 +92,10 @@ const FileDetailsPage = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
+
       setAlert({ message: `"${file.filename}" downloaded successfully!`, type: 'success' });
     } catch (error) {
+      console.error('Download error:', error);
       setAlert({ message: 'Download failed. Please try again.', type: 'error' });
     }
   };

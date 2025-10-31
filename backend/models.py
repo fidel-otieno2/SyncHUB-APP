@@ -36,5 +36,6 @@ class File(db.Model):
     device_name = db.Column(db.String(100))
     cloudinary_url = db.Column(db.String(500))
     cloudinary_public_id = db.Column(db.String(255))
+    # object_name = db.Column(db.String(500))  # Temporarily comment out for database recreation
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))

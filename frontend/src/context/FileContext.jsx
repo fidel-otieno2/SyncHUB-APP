@@ -50,14 +50,42 @@ export const FileProvider = ({ children }) => {
     return res.data;
   }, [fetchFiles]);
 
-  const downloadFile = (id) => {
-    // Track as recent file when downloaded
-    trackRecentFile(id);
-    // Use direct URL navigation for proper file downloads
-    const isNetworkAccess = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-    const baseUrl = isNetworkAccess ? `http://${window.location.hostname}:5000` : 'http://localhost:5000';
-    const downloadUrl = `${baseUrl}/api/files/${id}/download`;
-    window.open(downloadUrl, '_blank');
+  const downloadFile = async (id) => {
+    try {
+      // Track as recent file when downloaded
+      trackRecentFile(id);
+
+      // Get the download URL from backend
+      const response = await axiosInstance.get(`/api/files/${id}/download`, {
+        responseType: 'blob'
+      });
+
+      // Create blob URL and trigger download
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      // Get filename from response headers or use default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `file-${id}`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Download failed. Please try again.');
+    }
   };
 
   const trackRecentFile = (fileId) => {
@@ -92,7 +120,12 @@ export const FileProvider = ({ children }) => {
       await axiosInstance.post(`/api/files/move/${id}`, {
         folder_type: targetFolder
       });
-      fetchFiles();
+      // Force refresh with cache busting
+      await fetchFiles();
+      // Also trigger a page reload to ensure fresh data
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
       return true;
     } catch (error) {
       console.error('Move failed:', error);
